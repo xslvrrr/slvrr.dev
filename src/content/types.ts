@@ -1,7 +1,7 @@
 export type IconName =
   | 'github'
   | 'discord'
-  | 'x'
+  | 'roblox'
   | 'instagram'
   | 'youtube'
   | 'twitch'
