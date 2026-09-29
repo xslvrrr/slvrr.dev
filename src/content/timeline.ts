@@ -1,6 +1,5 @@
 import type { TimelineEntry } from './types'
 
-// Placeholder timeline: newest first.
 export const timeline: TimelineEntry[] = [
   {
     when: '2026',
@@ -9,13 +8,16 @@ export const timeline: TimelineEntry[] = [
   },
   {
     when: '2025',
-    title: 'Shipped a thing',
-    body: 'Describe a milestone you are proud of.',
+    title: 'First shipped app',
+    body: 'Millennium V1 was released.',
   },
   {
-    when: '2024',
-    title: 'Learned a thing',
-    body: 'A new language, a new job, a new obsession.',
+    when: '2023',
+    title: 'Discovered music properly',
+    body: 'Listened to my first album, Graduation.',
   },
-  { when: '20XX', title: 'Wrote my first line of code', body: 'Where it all started.' },
+  { 
+    when: '2021', 
+    title: 'Wrote my first line of code', 
+    body: 'Where it all started.' },
 ]
