@@ -1,10 +1,9 @@
 import type { Profile } from './types'
 
-// Placeholder copy: replace with your own words.
 export const profile: Profile = {
   name: 'slvrr',
-  handle: '@slvrr',
-  tagline: 'developer, tinkerer, collector of shiny things',
+  handle: '@sxvrce',
+  tagline: 'developer, tinkerer, artist',
   roles: ['websites', 'tools', 'weird experiments', 'things that shine'],
   bio: [
     'Hey, I’m slvrr. I build things for the web and spend too long making them feel right.',
@@ -12,7 +11,7 @@ export const profile: Profile = {
     'This page is my little corner of the internet: what I’m working on, listening to and thinking about.',
   ],
   location: 'Earth',
-  discordId: '',
-  lastfmUser: '',
+  discordId: '717659256069029949',
+  lastfmUser: 'sxvrce',
   githubUser: 'xslvrrr',
 }
