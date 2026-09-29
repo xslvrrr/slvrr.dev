@@ -1,0 +1,72 @@
+/*
+ * Design tokens: the whole look of the site lives here.
+ * Change these to reskin everything (colors, type, motion).
+ */
+@theme {
+  /* Surfaces */
+  --color-ink: #07070a; /* page background */
+  --color-ink-2: #0e0e13; /* raised surfaces */
+  --color-ink-3: #16161d;
+  --color-line: rgb(255 255 255 / 0.09);
+  --color-line-strong: rgb(255 255 255 / 0.18);
+
+  /* Text */
+  --color-fg: #eceef2;
+  --color-fg-muted: #9a9ca8;
+  --color-fg-faint: #5d5f6b;
+
+  /* Chrome + iridescent accents */
+  --color-chrome-1: #ffffff;
+  --color-chrome-2: #c9ced8;
+  --color-chrome-3: #7d8391;
+  --color-chrome-4: #2c2f37;
+  --color-iri-1: #9ef0ff; /* cyan */
+  --color-iri-2: #c7a4ff; /* lilac */
+  --color-iri-3: #ffb3e6; /* pink */
+  --color-iri-4: #d9ffb3; /* lime */
+  --color-live: #7dffb0;
+
+  /* Type */
+  --font-display: 'Unbounded Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+
+  /* Shape + motion */
+  --radius-card: 1.25rem;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+:root {
+  /* Classic "chrome horizon": bright sky, hard dark band, bright floor. */
+  --chrome-gradient: linear-gradient(
+    180deg,
+    var(--color-chrome-1) 0%,
+    var(--color-chrome-2) 36%,
+    var(--color-chrome-3) 49%,
+    var(--color-chrome-4) 50%,
+    var(--color-chrome-2) 53%,
+    var(--color-chrome-1) 72%,
+    var(--color-chrome-3) 100%
+  );
+  --iri-gradient: linear-gradient(
+    115deg,
+    var(--color-iri-1),
+    var(--color-iri-2),
+    var(--color-iri-3),
+    var(--color-iri-4),
+    var(--color-iri-1)
+  );
+  --section-pad: clamp(5rem, 12vw, 10rem);
+}
+
+/* Konami "mercury" mode: a warmer, liquid-gold reskin. */
+:root[data-mode='mercury'] {
+  --color-chrome-1: #fff6d6;
+  --color-chrome-2: #f0c96b;
+  --color-chrome-3: #8a5a1c;
+  --color-iri-1: #ffd27d;
+  --color-iri-2: #ff9f6b;
+  --color-iri-3: #ffe9a8;
+  --color-iri-4: #fff;
+}
