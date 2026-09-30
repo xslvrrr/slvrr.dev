@@ -9,7 +9,7 @@ export function Projects() {
   const stats = useRepoStats()
 
   return (
-    <section id="work" className="section">
+    <section id="work" data-bg="work" className="section">
       <SectionHeading index="03" eyebrow="selected work" title="Things I've built" />
       <div className="grid gap-6 md:grid-cols-2">
         {projects.map((p, i) => {

@@ -10,7 +10,7 @@ export function Footer() {
   const [stats, setStats] = useState(false)
 
   return (
-    <footer className="relative overflow-hidden border-t border-line">
+    <footer data-bg="footer" className="relative overflow-hidden border-t border-line">
       <div className="section flex flex-col gap-16 !pb-10">
         <div className="flex flex-col items-start justify-between gap-8 md:flex-row md:items-end">
           <p className="max-w-md text-lg text-fg-muted">
@@ -27,7 +27,7 @@ export function Footer() {
           </Magnetic>
         </div>
         <p
-          className="select-none text-center font-display text-[22vw] font-black uppercase leading-[0.75] tracking-tighter text-chrome"
+          className="select-none text-center font-display -my-[0.1em] py-[0.1em] text-[22vw] font-black uppercase leading-none tracking-tighter text-chrome"
           aria-hidden
         >
           {profile.name}

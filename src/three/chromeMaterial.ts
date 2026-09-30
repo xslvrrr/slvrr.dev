@@ -113,8 +113,6 @@ export function createChromeMaterial() {
     iridescence: 1,
     iridescenceIOR: 1.6,
     iridescenceThicknessRange: [180, 820],
-    clearcoat: 1,
-    clearcoatRoughness: 0.1,
     envMapIntensity: 1.4,
   })
 

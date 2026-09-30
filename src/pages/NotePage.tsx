@@ -23,7 +23,7 @@ export default function NotePage() {
   }, [note])
 
   return (
-    <main className="mx-auto max-w-3xl px-4 pb-32 pt-32 md:px-8 md:pt-44">
+    <main data-bg="notes" className="mx-auto max-w-3xl px-4 pb-32 pt-32 md:px-8 md:pt-44">
       <Link to="/#notes" className="eyebrow hover:text-fg" data-cursor="back">
         ← all notes
       </Link>

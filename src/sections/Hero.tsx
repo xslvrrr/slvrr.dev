@@ -20,7 +20,7 @@ const Scene = lazy(() => import('@/three/Scene'))
 
 export function Hero() {
   const ref = useRef<HTMLElement>(null)
-  const active = useInView(ref, { margin: '0px 0px 100px 0px' })
+  const inView = useInView(ref, { margin: '0px 0px 100px 0px' })
   const still = useReducedMotion() ?? false
   const fine = useFinePointer()
   const mode = useStore(modeStore)
@@ -37,16 +37,19 @@ export function Hero() {
   return (
     <section
       ref={ref}
+      data-bg="hero"
       className="relative h-svh min-h-[560px] overflow-hidden"
       onPointerMove={(e) => mouseX.set(e.clientX)}
       onPointerLeave={() => mouseX.set(-9999)}
     >
-      <div className="absolute inset-0">
+      {/* Fades out at the bottom so the chrome melts into the page background. */}
+      <div className="fade-bottom absolute inset-0">
         <ErrorBoundary fallback={<OrbFallback />}>
           <Suspense fallback={<OrbFallback />}>
             <Scene
               eventSource={ref}
-              active={active}
+              // Idle behind the splash screen and once scrolled away.
+              active={inView && entered}
               still={still}
               lite={!fine}
               mode={mode}
@@ -62,7 +65,7 @@ export function Hero() {
       >
         <p className="eyebrow mb-4 px-6 text-center !text-white/70">{profile.tagline}</p>
         <h1
-          className="flex font-display text-[24vw] uppercase leading-[0.8] tracking-[-0.04em] md:text-[19vw]"
+          className="flex font-display text-[19vw] uppercase leading-none tracking-[-0.04em]"
           aria-label={profile.name}
         >
           {[...profile.name].map((ch, i) => (
@@ -120,14 +123,16 @@ function Letter({
   const scaleY = useTransform(n, [0, 1], [1, 1.18])
 
   return (
-    <span className="inline-block overflow-hidden pb-[0.06em]">
+    // The reveal mask has headroom so the tall glyphs and the cursor stretch
+    // (scaleY from the bottom) aren't clipped; negative margins keep the layout tight.
+    <span className="-mb-[0.08em] -mt-[0.22em] inline-block overflow-hidden pb-[0.08em] pt-[0.22em]">
       <motion.span
         ref={ref}
         aria-hidden
         className="inline-block origin-bottom"
         style={{ fontWeight, scaleY }}
-        initial={{ y: '105%' }}
-        animate={{ y: play ? '0%' : '105%' }}
+        initial={{ y: '130%' }}
+        animate={{ y: play ? '0%' : '130%' }}
         transition={{ delay: 0.5 + index * 0.07, duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
       >
         {ch}
@@ -136,7 +141,7 @@ function Letter({
   )
 }
 
-const longestRole = Math.max(...profile.roles.map((r) => r.length))
+const longestRole = profile.roles.reduce((a, b) => (b.length > a.length ? b : a), '')
 
 function Roles() {
   const [i, setI] = useState(0)
@@ -148,14 +153,15 @@ function Roles() {
   return (
     <p className="mt-6 flex items-center gap-2 font-mono text-sm uppercase tracking-widest md:text-base">
       <span className="text-white/60">i make</span>
-      <span
-        className="relative inline-flex h-[1.4em] overflow-hidden"
-        style={{ minWidth: `${longestRole}ch` }}
-      >
-        <AnimatePresence mode="popLayout" initial={false}>
+      {/* An invisible copy of the longest role sizes the slot, so nothing gets cut off. */}
+      <span className="relative inline-grid h-[1.6em] items-center overflow-hidden">
+        <span aria-hidden className="invisible col-start-1 row-start-1 whitespace-nowrap">
+          {longestRole}
+        </span>
+        <AnimatePresence initial={false}>
           <motion.span
             key={i}
-            className="absolute left-0 whitespace-nowrap"
+            className="col-start-1 row-start-1 whitespace-nowrap"
             initial={{ y: '100%', opacity: 0 }}
             animate={{ y: '0%', opacity: 1 }}
             exit={{ y: '-100%', opacity: 0 }}
@@ -172,7 +178,7 @@ function Roles() {
 /** Shown while the 3D chunk loads (and as the look for no-WebGL visitors). */
 function OrbFallback() {
   return (
-    <div className="grid h-full place-items-center bg-ink">
+    <div className="grid h-full place-items-center">
       <div
         className="aspect-square w-[min(60vw,60vh)] animate-pulse rounded-full"
         style={{

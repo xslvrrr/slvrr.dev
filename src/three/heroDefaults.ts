@@ -10,7 +10,7 @@ export const heroDefaults = {
   speed: 0.25,
   pull: 0.35,
   scale: 1.0,
-  detail: 96,
+  detail: 64,
   // surface
   color: '#ffffff',
   roughness: 0.08,
@@ -25,7 +25,6 @@ export const heroDefaults = {
   bloomThreshold: 0.9,
   aberration: 0.0012,
   grain: 0.06,
-  vignette: 0.55,
 }
 
 export type HeroParams = typeof heroDefaults

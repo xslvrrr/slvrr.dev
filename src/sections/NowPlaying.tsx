@@ -11,7 +11,7 @@ export function NowPlaying() {
   const playing = np?.playing ?? false
 
   return (
-    <section id="music" className="section">
+    <section id="music" data-bg="music" className="section">
       <SectionHeading index="02" eyebrow="on rotation" title="What I'm into" />
       <div className="grid gap-8 lg:grid-cols-[1fr_1.2fr]">
         <div className="panel flex flex-col items-center gap-8 p-8 sm:flex-row lg:flex-col xl:flex-row">

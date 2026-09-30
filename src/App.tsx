@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Route, Routes, useLocation } from 'react-router'
 import { Nav } from '@/components/Nav'
 import { Cursor } from '@/fx/Cursor'
-import { GrainBackground } from '@/fx/GrainBackground'
+import { ShaderBackground } from '@/fx/ShaderBackground'
 import { useKonami } from '@/hooks/useKonami'
 import { sfx } from '@/lib/sfx'
 import { modeStore } from '@/lib/store'
@@ -32,7 +32,7 @@ export default function App() {
   return (
     <ReactLenis root options={{ lerp: 0.1, anchors: true, autoRaf: true }}>
       <MotionConfig reducedMotion="user">
-        <GrainBackground />
+        <ShaderBackground />
         <Cursor key={location.pathname} />
         <Nav />
         <AnimatePresence mode="wait">

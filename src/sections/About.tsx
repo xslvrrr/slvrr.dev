@@ -14,7 +14,7 @@ export function About() {
   const scaleY = useSpring(scrollYProgress, { stiffness: 120, damping: 30 })
 
   return (
-    <section id="about" className="section">
+    <section id="about" data-bg="about" className="section">
       <SectionHeading index="04" eyebrow="about me" title={`Hi, I'm ${profile.name}`} />
       <div className="grid gap-16 lg:grid-cols-2">
         <div className="flex flex-col gap-6">

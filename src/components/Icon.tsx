@@ -3,10 +3,10 @@ import {
   siGithub,
   siInstagram,
   siLastdotfm,
+  siRoblox,
   siSpotify,
   siSteam,
   siTwitch,
-  siX,
   siYoutube,
 } from 'simple-icons'
 import type { IconName } from '@/content/types'
@@ -14,7 +14,7 @@ import type { IconName } from '@/content/types'
 const paths: Record<IconName, string> = {
   github: siGithub.path,
   discord: siDiscord.path,
-  x: siX.path,
+  roblox: siRoblox.path,
   instagram: siInstagram.path,
   youtube: siYoutube.path,
   twitch: siTwitch.path,

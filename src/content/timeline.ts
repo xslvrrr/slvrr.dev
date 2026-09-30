@@ -16,8 +16,9 @@ export const timeline: TimelineEntry[] = [
     title: 'Discovered music properly',
     body: 'Listened to my first album, Graduation.',
   },
-  { 
-    when: '2021', 
-    title: 'Wrote my first line of code', 
-    body: 'Where it all started.' },
+  {
+    when: '2021',
+    title: 'Wrote my first line of code',
+    body: 'Where it all started.',
+  },
 ]

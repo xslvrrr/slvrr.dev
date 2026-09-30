@@ -34,7 +34,6 @@ export default function DevTuner({ onChange }: { onChange: (p: HeroParams) => vo
       bloomThreshold: { value: d.bloomThreshold, min: 0, max: 1, step: 0.01 },
       aberration: { value: d.aberration, min: 0, max: 0.01, step: 0.0001 },
       grain: { value: d.grain, min: 0, max: 0.4, step: 0.01 },
-      vignette: { value: d.vignette, min: 0, max: 1, step: 0.01 },
     }),
     'copy values': button(() => {
       void navigator.clipboard.writeText(JSON.stringify(latest, null, 2))

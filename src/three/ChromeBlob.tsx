@@ -35,9 +35,11 @@ export function ChromeBlob({ params, tint, scroll }: Props) {
     if (!m) return
     const t = state.clock.elapsedTime
     const p = scroll.get()
+    const px = MathUtils.clamp(state.pointer.x, -1, 1)
+    const py = MathUtils.clamp(state.pointer.y, -1, 1)
 
     // Aim the bulge at the cursor, expressed in the blob's own (rotating) space.
-    tmpDir.set(state.pointer.x * 1.6, state.pointer.y * 1.2, 1).normalize()
+    tmpDir.set(px * 1.6, py * 1.2, 1).normalize()
     tmpQuat.copy(m.quaternion).invert()
     tmpDir.applyQuaternion(tmpQuat)
     pointer.current.lerp(tmpDir, 1 - Math.exp(-delta * 6)).normalize()
@@ -52,11 +54,11 @@ export function ChromeBlob({ params, tint, scroll }: Props) {
     uniforms.uPointer.value.copy(pointer.current)
 
     m.rotation.y += delta * params.spin
-    m.rotation.x = MathUtils.damp(m.rotation.x, -state.pointer.y * 0.4, 2, delta)
-    m.position.x = MathUtils.damp(m.position.x, state.pointer.x * params.follow, 3, delta)
+    m.rotation.x = MathUtils.damp(m.rotation.x, -py * 0.4, 2, delta)
+    m.position.x = MathUtils.damp(m.position.x, px * params.follow, 3, delta)
     m.position.y = MathUtils.damp(
       m.position.y,
-      state.pointer.y * params.follow * 0.6 + p * 1.2 + Math.sin(t * 0.8) * 0.05,
+      py * params.follow * 0.6 + p * 1.2 + Math.sin(t * 0.8) * 0.05,
       3,
       delta,
     )

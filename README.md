@@ -27,6 +27,7 @@ npm run format     # prettier
 | Write a note                       | add `src/content/notes/<slug>.mdx` with a `meta` |
 | Colors, fonts, radii, easing       | `src/styles/tokens.css`                          |
 | The 3D chrome look                 | `src/three/heroDefaults.ts` (see below)          |
+| Animated background per section    | `src/styles/backgroundThemes.ts`                 |
 | Section order                      | `src/pages/Home.tsx`                             |
 
 All copy in `src/content/` is placeholder text, so replace it with your own.
@@ -40,6 +41,19 @@ dev-only and is stripped from production builds.
 
 For a full reskin, change the tokens in `src/styles/tokens.css`. The 3D reflections read the
 `--color-iri-*` tokens too.
+
+The page background is a small WebGL shader that morphs between themes as you scroll. Each
+section has a `data-bg="<theme>"` attribute, and each theme in `src/styles/backgroundThemes.ts`
+sets its colors, scale, warp, speed and ribbons vs blobs. To add a theme, add an entry there
+and point a section at it.
+
+### Performance budget
+
+- The hero renders at most 60 fps and a 1.5× pixel ratio. It pauses behind the splash screen
+  and once scrolled out of view, and lowers its resolution or effects if frames drop.
+- The background renders at 1/6 resolution and 30 fps.
+- Avoid `backdrop-filter`, big `filter: blur()` layers and infinite `background-position`
+  animations. Over an animated background they force full-screen repaints every frame.
 
 ## Live integrations
 
@@ -80,7 +94,7 @@ api/            Vercel functions (lastfm, github)
 src/content/    all copy and data, typed, with no JSX
 src/sections/   page sections (Splash, Hero, Links, NowPlaying, Projects, About, Notes, Footer)
 src/three/      the chrome blob: shader material, studio lighting, scene, dev tuner
-src/fx/         reusable effects: Cursor, Magnetic, TiltCard, TextReveal, Marquee, GrainBackground
+src/fx/         reusable effects: Cursor, Magnetic, TiltCard, TextReveal, Marquee, ShaderBackground
 src/hooks/      useLanyard, useNowPlaying, useRepoStats, useKonami, useFinePointer
 src/lib/        tiny global store, synthesized sfx, helpers
 ```

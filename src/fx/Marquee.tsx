@@ -1,6 +1,7 @@
 import {
   motion,
   useAnimationFrame,
+  useInView,
   useMotionValue,
   useScroll,
   useSpring,
@@ -21,8 +22,11 @@ export function Marquee({ items, speed = 3 }: { items: string[]; speed?: number 
   const skew = useTransform(velocity, [-3000, 3000], [12, -12])
   const x = useTransform(base, (v) => `${wrap(-50, 0, v)}%`)
   const dir = useRef(-1)
+  const ref = useRef<HTMLDivElement>(null)
+  const visible = useInView(ref)
 
   useAnimationFrame((_, delta) => {
+    if (!visible) return
     const b = boost.get()
     if (b < 0) dir.current = 1
     else if (b > 0) dir.current = -1
@@ -41,9 +45,13 @@ export function Marquee({ items, speed = 3 }: { items: string[]; speed?: number 
   )
 
   return (
-    <div className="relative overflow-hidden border-y border-line py-6" aria-hidden>
+    <div
+      ref={ref}
+      className="relative overflow-hidden border-y border-line py-5"
+      aria-hidden
+    >
       <motion.div
-        className="flex w-max whitespace-nowrap font-display text-4xl font-bold uppercase tracking-tight text-chrome md:text-6xl"
+        className="flex w-max whitespace-nowrap py-[0.1em] font-display text-4xl font-bold uppercase leading-[1.25] tracking-tight text-chrome md:text-6xl"
         style={{ x, skewX: skew }}
       >
         {row}

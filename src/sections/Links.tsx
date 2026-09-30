@@ -23,7 +23,7 @@ export function Links() {
   const mouseX = useMotionValue(Infinity)
 
   return (
-    <section id="links" className="section">
+    <section id="links" data-bg="links" className="section">
       <SectionHeading index="01" eyebrow="find me" title="Links & presence" />
       <div className="grid items-start gap-8 lg:grid-cols-[1.4fr_1fr]">
         <div className="flex flex-col gap-6">

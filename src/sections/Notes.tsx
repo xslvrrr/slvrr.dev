@@ -6,7 +6,7 @@ import { sfx } from '@/lib/sfx'
 
 export function Notes() {
   return (
-    <section id="notes" className="section">
+    <section id="notes" data-bg="notes" className="section">
       <SectionHeading index="05" eyebrow="writing" title="Notes" />
       <ul className="border-t border-line">
         {notes.map((n, i) => (
