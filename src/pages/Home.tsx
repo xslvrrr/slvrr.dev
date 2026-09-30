@@ -1,3 +1,4 @@
+import { ErrorBoundary as Safe } from '@/components/ErrorBoundary'
 import { Marquee } from '@/fx/Marquee'
 import { About } from '@/sections/About'
 import { Footer } from '@/sections/Footer'
@@ -9,21 +10,37 @@ import { Projects } from '@/sections/Projects'
 import { Splash } from '@/sections/Splash'
 import { profile } from '@/content/profile'
 
+// Each section is isolated: if one throws (e.g. a live API sends something
+// unexpected), only that section disappears instead of the whole page.
 export default function Home() {
   return (
     <>
       <Splash />
       <main id="top">
-        <Hero />
+        <Safe>
+          <Hero />
+        </Safe>
         <Marquee items={[profile.name, ...profile.roles]} />
-        <Links />
-        <NowPlaying />
+        <Safe>
+          <Links />
+        </Safe>
+        <Safe>
+          <NowPlaying />
+        </Safe>
         <Marquee items={['music', 'code', 'games', 'chrome', 'noise']} speed={2} />
-        <Projects />
-        <About />
-        <Notes />
+        <Safe>
+          <Projects />
+        </Safe>
+        <Safe>
+          <About />
+        </Safe>
+        <Safe>
+          <Notes />
+        </Safe>
       </main>
-      <Footer />
+      <Safe>
+        <Footer />
+      </Safe>
     </>
   )
 }

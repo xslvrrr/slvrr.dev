@@ -35,10 +35,26 @@ const SOCKET = 'wss://api.lanyard.rest/socket'
 
 /**
  * Live Discord presence via Lanyard (https://github.com/Phineas/lanyard).
- * The Discord account must be in the Lanyard Discord server.
+ * The Discord account must be in the Lanyard Discord server
+ * (https://discord.gg/lanyard), otherwise Lanyard replies with an empty object
+ * and `state` becomes "unmonitored".
  */
+export type LanyardState = 'off' | 'connecting' | 'live' | 'unmonitored'
+
+/** Lanyard sends `{}` for accounts it isn't tracking, so check the shape. */
+function isPresence(d: unknown): d is LanyardPresence {
+  const p = d as Partial<LanyardPresence> | null
+  return (
+    !!p &&
+    typeof p === 'object' &&
+    !!p.discord_user &&
+    typeof p.discord_status === 'string'
+  )
+}
+
 export function useLanyard(userId: string) {
   const [presence, setPresence] = useState<LanyardPresence | null>(null)
+  const [unmonitored, setUnmonitored] = useState(false)
 
   useEffect(() => {
     if (!userId) return
@@ -50,7 +66,12 @@ export function useLanyard(userId: string) {
     const connect = () => {
       ws = new WebSocket(SOCKET)
       ws.onmessage = (e) => {
-        const msg = JSON.parse(e.data as string)
+        let msg
+        try {
+          msg = JSON.parse(e.data as string)
+        } catch {
+          return
+        }
         if (msg.op === 1) {
           ws?.send(JSON.stringify({ op: 2, d: { subscribe_to_id: userId } }))
           heartbeat = window.setInterval(
@@ -61,7 +82,16 @@ export function useLanyard(userId: string) {
           msg.op === 0 &&
           (msg.t === 'INIT_STATE' || msg.t === 'PRESENCE_UPDATE')
         ) {
-          setPresence(msg.d as LanyardPresence)
+          if (isPresence(msg.d)) {
+            setPresence({ ...msg.d, activities: msg.d.activities ?? [] })
+            setUnmonitored(false)
+          } else {
+            setPresence(null)
+            setUnmonitored(true)
+            console.info(
+              '[slvrr] Lanyard is not monitoring this Discord account. Join https://discord.gg/lanyard to show live presence.',
+            )
+          }
         }
       }
       ws.onclose = () => {
@@ -79,7 +109,14 @@ export function useLanyard(userId: string) {
     }
   }, [userId])
 
-  return presence
+  const state: LanyardState = !userId
+    ? 'off'
+    : presence
+      ? 'live'
+      : unmonitored
+        ? 'unmonitored'
+        : 'connecting'
+  return { presence, state }
 }
 
 export function avatarUrl(p: LanyardPresence) {

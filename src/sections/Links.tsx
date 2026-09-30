@@ -111,7 +111,7 @@ const statusColor: Record<DiscordStatus, string> = {
 }
 
 function DiscordCard() {
-  const p = useLanyard(profile.discordId)
+  const { presence: p, state } = useLanyard(profile.discordId)
   const activity = p?.activities.find((a) => a.type !== 4 && a.type !== 2)
   const custom = p?.activities.find((a) => a.type === 4)?.state
   const img = activity ? activityImage(activity) : null
@@ -128,7 +128,14 @@ function DiscordCard() {
               boxShadow: `0 0 12px ${statusColor[p?.discord_status ?? 'offline']}`,
             }}
           />
-          {p ? p.discord_status : profile.discordId ? 'connecting…' : 'not linked'}
+          {
+            {
+              live: p?.discord_status,
+              connecting: 'connecting…',
+              unmonitored: 'offline',
+              off: 'not linked',
+            }[state]
+          }
         </span>
       </div>
 
@@ -175,9 +182,11 @@ function DiscordCard() {
           />
         ) : (
           <p className="font-mono text-xs text-fg-faint">
-            {profile.discordId
-              ? 'nothing going on right now'
-              : 'set discordId in src/content/profile.ts to show live presence'}
+            {state === 'off'
+              ? 'set discordId in src/content/profile.ts to show live presence'
+              : state === 'unmonitored' && import.meta.env.DEV
+                ? 'Lanyard isn’t tracking this account yet: join discord.gg/lanyard'
+                : 'nothing going on right now'}
           </p>
         )}
       </div>
