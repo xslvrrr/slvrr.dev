@@ -1,7 +1,7 @@
 import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
-import { profile } from '@/content/profile'
+import { GlitchHandle } from '@/components/GlitchHandle'
 import { sfx } from '@/lib/sfx'
 import { soundStore, useStore } from '@/lib/store'
 
@@ -38,7 +38,7 @@ export function Nav() {
       transition={{ delay: 0.4, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
     >
       <Link to="/" className="font-semibold text-fg" onMouseEnter={sfx.tick}>
-        {profile.handle}
+        <GlitchHandle />
       </Link>
       <nav className="hidden gap-6 md:flex">
         {sections.map((s) => (

@@ -4,11 +4,12 @@ export const profile: Profile = {
   name: 'slvrr',
   handle: '@sxvrce',
   tagline: 'developer, tinkerer, artist',
-  roles: ['websites', 'tools', 'weird experiments', 'things that shine'],
+  roles: ['software', 'tools', 'noise', 'things that shine'],
+  // Draft bio: rewrite in your own words.
   bio: [
-    'Hey, I’m slvrr. I build things for the web and spend too long making them feel right.',
-    'I like fast software, loud music and interfaces that react when you touch them.',
-    'This page is my little corner of the internet: what I’m working on, listening to and thinking about.',
+    'slvrr. sxvrce. same person, depending on who’s asking.',
+    'I build software, make things that look expensive, and obsess over details nobody else notices.',
+    'Mostly nocturnal. Usually listening to something too loud. This is the corner of the internet I control.',
   ],
   location: 'Earth',
   discordId: '717659256069029949',

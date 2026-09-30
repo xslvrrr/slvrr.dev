@@ -26,7 +26,7 @@
   }
 
   ::selection {
-    background: var(--color-iri-2);
+    background: var(--color-iri-1);
     color: var(--color-ink);
   }
 
@@ -79,11 +79,14 @@
     color: transparent;
   }
 
+  /* Shimmering ice text. The gradient tiles seamlessly and the animation moves
+     it exactly one period (-200% of a 200%-wide image), so there's no seam. */
   .text-iri {
-    background: var(--iri-gradient);
+    background: var(--iri-loop) 0 0 / 200% 100% repeat-x;
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+    animation: iri-loop 6s linear infinite;
   }
 
   /* Glassy panel with a hairline chrome border. No backdrop-filter: blurring the
@@ -103,9 +106,16 @@
   /* Used when WebGL isn't available for the animated background. */
   .static-bg {
     background:
-      radial-gradient(60vmax 60vmax at 10% 5%, rgb(199 164 255 / 0.12), transparent 70%),
-      radial-gradient(60vmax 60vmax at 95% 45%, rgb(158 240 255 / 0.1), transparent 70%),
-      radial-gradient(60vmax 60vmax at 40% 110%, rgb(255 179 230 / 0.1), transparent 70%);
+      radial-gradient(60vmax 60vmax at 10% 5%, rgb(127 166 200 / 0.1), transparent 70%),
+      radial-gradient(60vmax 60vmax at 95% 45%, rgb(191 238 255 / 0.06), transparent 70%),
+      radial-gradient(60vmax 60vmax at 40% 110%, rgb(77 108 140 / 0.12), transparent 70%);
+  }
+
+  /* Faint CRT scanlines + vignette over the pixel background (static, so free). */
+  .crt {
+    background:
+      repeating-linear-gradient(to bottom, rgb(0 0 0 / 0.28) 0 1px, transparent 1px 3px),
+      radial-gradient(ellipse at center, transparent 55%, rgb(0 0 0 / 0.55) 100%);
   }
 
   .fade-bottom {
@@ -135,6 +145,12 @@
     font-size: clamp(2.25rem, 7vw, 5.5rem);
     line-height: 0.95;
     letter-spacing: -0.03em;
+  }
+}
+
+@keyframes iri-loop {
+  to {
+    background-position: -200% 0;
   }
 }
 

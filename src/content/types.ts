@@ -57,7 +57,11 @@ export interface MediaItem {
   kind: 'album' | 'game' | 'show' | 'book'
   title: string
   by: string
-  /** Optional cover image URL. A generated chrome gradient is used when missing. */
-  cover?: string
+  /** Where clicking the cover goes (Spotify album, store page, video…). */
   href?: string
+  /**
+   * Remote artwork for `npm run covers` to download when it can't be found from
+   * `href` (Spotify and YouTube links are resolved automatically).
+   */
+  art?: string
 }

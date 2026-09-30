@@ -8,15 +8,17 @@ import {
 } from '@/styles/backgroundThemes'
 
 /**
- * Fixed, animated page background: a domain-warped noise "mesh gradient" that
- * morphs between per-section themes as you scroll (see backgroundThemes.ts).
+ * Fixed, animated page background with a Balatro-style "crunchy" look: a slow
+ * spiral swirl of domain-warped noise, posterized into four palette bands with
+ * ordered (Bayer) dithering and drawn as big crisp pixels. It morphs between
+ * per-section themes as you scroll (see backgroundThemes.ts).
  *
- * Kept deliberately cheap: plain WebGL, one full-screen triangle, rendered at
- * 1/6 of the CSS resolution (the browser's upscale doubles as a soft blur) and
- * capped at 30 fps. The film grain is a static tiled image on top.
+ * Deliberately cheap: plain WebGL, one full-screen triangle, one shader pixel
+ * per PIXEL×PIXEL CSS pixels (upscaled with nearest-neighbour), 30 fps.
  */
 
-const DOWNSCALE = 6
+/** Size of one background "pixel" in CSS pixels. */
+const PIXEL = 5
 const FPS = 30
 
 const vertex = /* glsl */ `
@@ -29,7 +31,7 @@ precision highp float;
 uniform vec2 uRes;
 uniform float uTime;
 uniform vec3 uC0, uC1, uC2, uC3;
-uniform float uScale, uWarp, uRibbons, uIntensity;
+uniform float uScale, uWarp, uRibbons, uIntensity, uSwirl;
 
 // 2D simplex noise, Ashima Arts / Stefan Gustavson (MIT).
 vec3 permute(vec3 x) { return mod(((x * 34.0) + 1.0) * x, 289.0); }
@@ -56,12 +58,22 @@ float snoise(vec2 v) {
   return 130.0 * dot(m, g);
 }
 
+// 4x4 ordered-dither threshold in [0, 1), one cell per background pixel.
+float bayer2(vec2 a) { a = floor(a); return fract(a.x / 2.0 + a.y * a.y * 0.75); }
+float bayer4(vec2 a) { return bayer2(0.5 * a) * 0.25 + bayer2(a); }
+
 void main() {
   vec2 uv = gl_FragCoord.xy / uRes;
-  vec2 p = (gl_FragCoord.xy - 0.5 * uRes) / uRes.y * uScale * 0.55;
+  vec2 p = (gl_FragCoord.xy - 0.5 * uRes) / uRes.y;
   float t = uTime;
 
-  // Two rounds of domain warping give the liquid, folding flow.
+  // Spiral swirl: rotation grows with distance from the centre and slowly spins.
+  float rad = length(p);
+  float ang = uSwirl * (rad * 3.2 + t * 0.06);
+  float cs = cos(ang), sn = sin(ang);
+  p = mat2(cs, -sn, sn, cs) * p * uScale * 0.55;
+
+  // Two rounds of domain warping give the painted, folding flow.
   vec2 q = vec2(snoise(p + vec2(0.0, t * 0.10)), snoise(p + vec2(5.2, 1.3) - vec2(t * 0.08, 0.0)));
   vec2 r = vec2(
     snoise(p + uWarp * q + vec2(1.7, 9.2) + t * 0.05),
@@ -69,22 +81,27 @@ void main() {
   );
   float n = snoise(p + uWarp * r);
 
-  float blob = smoothstep(-0.2, 1.0, n);
+  float blob = n * 0.5 + 0.5;
   float ribbon = pow(1.0 - abs(n), 5.0);
+  float v = mix(blob, ribbon, uRibbons);
+  v *= 0.8 + 0.2 * smoothstep(-0.6, 1.0, q.x);
+  // Darker edges keep the focus in the middle.
+  v *= mix(0.55, 1.0, smoothstep(0.85, 0.15, length(uv - 0.5)));
+  // Stretch the contrast so all four bands show up.
+  v = smoothstep(0.12, 0.8, v) * uIntensity;
 
+  // Posterize into 4 bands; the dither turns band edges into crunchy patterns.
+  v += (bayer4(gl_FragCoord.xy) - 0.5) * 0.09;
   vec3 col = uC0;
-  col = mix(col, uC1, smoothstep(-0.6, 1.0, q.x) * uIntensity * 0.75);
-  col = mix(col, uC2, smoothstep(-0.2, 1.2, r.y) * uIntensity * 0.6);
-  col += uC3 * (blob * (1.0 - uRibbons) * 0.16 + ribbon * uRibbons * 0.3) * uIntensity;
-
-  // Darker edges keep the focus in the middle of the screen.
-  col *= mix(0.55, 1.0, smoothstep(0.85, 0.15, length(uv - 0.5)));
+  col = mix(col, uC1, step(0.3, v));
+  col = mix(col, uC2, step(0.58, v));
+  col = mix(col, uC3, step(0.84, v));
   gl_FragColor = vec4(col, 1.0);
 }
 `
 
 /** Flat numeric form of a theme, so two themes can be blended component-wise. */
-const SIZE = 17
+const SIZE = 18
 function themeVector(theme: BgTheme, mercury: boolean, out = new Float32Array(SIZE)) {
   const colors = mercury ? mercuryColors : theme.colors
   colors.forEach((hex, i) => {
@@ -98,6 +115,7 @@ function themeVector(theme: BgTheme, mercury: boolean, out = new Float32Array(SI
   out[14] = theme.speed
   out[15] = theme.ribbons
   out[16] = theme.intensity
+  out[17] = theme.swirl
   return out
 }
 
@@ -123,26 +141,9 @@ const smoothstep = (a: number, b: number, x: number) => {
   return t * t * (3 - 2 * t)
 }
 
-function makeGrainTile() {
-  const size = 128
-  const c = document.createElement('canvas')
-  c.width = c.height = size
-  const ctx = c.getContext('2d')
-  if (!ctx) return ''
-  const img = ctx.createImageData(size, size)
-  for (let i = 0; i < img.data.length; i += 4) {
-    const v = Math.random() * 255
-    img.data[i] = img.data[i + 1] = img.data[i + 2] = v
-    img.data[i + 3] = 255
-  }
-  ctx.putImageData(img, 0, 0)
-  return c.toDataURL()
-}
-
 export function ShaderBackground() {
   const canvas = useRef<HTMLCanvasElement>(null)
   const [failed, setFailed] = useState(false)
-  const [grain] = useState(makeGrainTile)
 
   useEffect(() => {
     const el = canvas.current
@@ -192,10 +193,14 @@ export function ShaderBackground() {
     const uWarp = u('uWarp')
     const uRibbons = u('uRibbons')
     const uIntensity = u('uIntensity')
+    const uSwirl = u('uSwirl')
 
     const resize = () => {
-      el.width = Math.max(1, Math.round(window.innerWidth / DOWNSCALE))
-      el.height = Math.max(1, Math.round(window.innerHeight / DOWNSCALE))
+      el.width = Math.max(1, Math.ceil(window.innerWidth / PIXEL))
+      el.height = Math.max(1, Math.ceil(window.innerHeight / PIXEL))
+      // Exact multiples of PIXEL so every background pixel is the same size.
+      el.style.width = `${el.width * PIXEL}px`
+      el.style.height = `${el.height * PIXEL}px`
       gl.viewport(0, 0, el.width, el.height)
       gl.uniform2f(uRes, el.width, el.height)
       dirty = true
@@ -262,6 +267,7 @@ export function ShaderBackground() {
       gl.uniform1f(uWarp, current[13])
       gl.uniform1f(uRibbons, current[15])
       gl.uniform1f(uIntensity, current[16])
+      gl.uniform1f(uSwirl, current[17])
       gl.drawArrays(gl.TRIANGLES, 0, 3)
     })
 
@@ -283,16 +289,19 @@ export function ShaderBackground() {
   }, [])
 
   return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 bg-ink">
+    <div
+      aria-hidden
+      className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-ink"
+    >
       {failed ? (
         <div className="static-bg absolute inset-0" />
       ) : (
-        <canvas ref={canvas} className="absolute inset-0 h-full w-full" />
+        <canvas
+          ref={canvas}
+          className="absolute left-0 top-0 [image-rendering:pixelated]"
+        />
       )}
-      <div
-        className="absolute inset-0 opacity-[0.045]"
-        style={{ backgroundImage: grain ? `url(${grain})` : undefined }}
-      />
+      <div className="crt absolute inset-0" />
     </div>
   )
 }

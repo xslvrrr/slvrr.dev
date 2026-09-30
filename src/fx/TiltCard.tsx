@@ -28,8 +28,14 @@ export function TiltCard({
   const rotateX = useTransform(sy, [0, 1], [max, -max])
   const gx = useTransform(sx, (v) => `${v * 100}%`)
   const gy = useTransform(sy, (v) => `${v * 100}%`)
-  const foilPos = useTransform(sx, (v) => `${v * 200}% 50%`)
-  const glare = useMotionTemplate`radial-gradient(circle at ${gx} ${gy}, rgb(255 255 255 / 0.28), transparent 45%)`
+  // Kept within 0–100% (springs overshoot) so the gradient's edge never shows.
+  const clamp01 = (v: number) => Math.min(1, Math.max(0, v))
+  const fx = useTransform(sx, (v) => `${clamp01(v) * 100}%`)
+  const fy = useTransform(sy, (v) => `${clamp01(v) * 100}%`)
+  const foilPos = useMotionTemplate`${fx} ${fy}`
+  const glare = useMotionTemplate`radial-gradient(circle at ${gx} ${gy}, rgb(220 240 255 / 0.14), transparent 40%)`
+  // The foil only shows in a soft spot around the cursor, so it never has an edge.
+  const foilMask = useMotionTemplate`radial-gradient(circle at ${gx} ${gy}, #000 0%, transparent 65%)`
   const hover = useMotionValue(0)
   const foilOpacity = useSpring(hover, { stiffness: 200, damping: 30 })
   const foilAlpha = useTransform(foilOpacity, [0, 1], [0, 0.35])
@@ -53,12 +59,15 @@ export function TiltCard({
       >
         <motion.div
           aria-hidden
-          className="pointer-events-none absolute inset-0 mix-blend-color-dodge"
+          className="pointer-events-none absolute inset-0 mix-blend-screen"
           style={{
             opacity: foilAlpha,
             backgroundImage: 'var(--iri-gradient)',
             backgroundSize: '300% 300%',
+            backgroundRepeat: 'no-repeat',
             backgroundPosition: foilPos,
+            maskImage: foilMask,
+            WebkitMaskImage: foilMask,
           }}
         />
         <motion.div

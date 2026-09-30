@@ -7,6 +7,7 @@ import {
 } from 'motion/react'
 import { useRef } from 'react'
 import { Icon } from '@/components/Icon'
+import { copy } from '@/content/copy'
 import { SectionHeading } from '@/components/SectionHeading'
 import { links } from '@/content/links'
 import { profile } from '@/content/profile'
@@ -24,7 +25,7 @@ export function Links() {
 
   return (
     <section id="links" data-bg="links" className="section">
-      <SectionHeading index="01" eyebrow="find me" title="Links & presence" />
+      <SectionHeading {...copy.sections.links} />
       <div className="grid items-start gap-8 lg:grid-cols-[1.4fr_1fr]">
         <div className="flex flex-col gap-6">
           {/* macOS-style magnifying dock */}

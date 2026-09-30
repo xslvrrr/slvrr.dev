@@ -1,10 +1,14 @@
 import { motion } from 'motion/react'
+import { useState } from 'react'
+import { copy } from '@/content/copy'
 import { SectionHeading } from '@/components/SectionHeading'
 import { media } from '@/content/media'
 import { profile } from '@/content/profile'
 import type { MediaItem } from '@/content/types'
 import { TiltCard } from '@/fx/TiltCard'
 import { useNowPlaying } from '@/hooks/useNowPlaying'
+import { coverPath } from '@/lib/covers'
+import { sfx } from '@/lib/sfx'
 
 export function NowPlaying() {
   const np = useNowPlaying()
@@ -12,7 +16,7 @@ export function NowPlaying() {
 
   return (
     <section id="music" data-bg="music" className="section">
-      <SectionHeading index="02" eyebrow="on rotation" title="What I'm into" />
+      <SectionHeading {...copy.sections.music} />
       <div className="grid gap-8 lg:grid-cols-[1fr_1.2fr]">
         <div className="panel flex flex-col items-center gap-8 p-8 sm:flex-row lg:flex-col xl:flex-row">
           <Vinyl art={np?.art ?? null} spinning={playing} />
@@ -147,32 +151,36 @@ function Bars({ active }: { active: boolean }) {
   )
 }
 
-function hue(s: string) {
+function hash(s: string) {
   let h = 0
-  for (const c of s) h = (h * 31 + c.charCodeAt(0)) % 360
+  for (const c of s) h = (h * 31 + c.charCodeAt(0)) % 997
   return h
 }
 
 function Cover({ item }: { item: MediaItem }) {
-  const h = hue(item.title + item.by)
+  const [broken, setBroken] = useState(false)
+  // Fallback tile in the site's cold palette (only if the cover file is missing).
+  const light = 40 + (hash(item.title + item.by) % 30)
   const body = (
     <TiltCard className="aspect-square !rounded-2xl" max={14}>
       <div className="relative aspect-square">
-        {item.cover ? (
-          <img
-            src={item.cover}
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover"
-          />
-        ) : (
+        {broken ? (
           <div
             className="absolute inset-0"
             style={{
-              background: `radial-gradient(circle at 30% 25%, hsl(${h} 90% 85% / 0.9), transparent 55%), linear-gradient(135deg, hsl(${h} 30% 30%), hsl(${(h + 60) % 360} 40% 12%))`,
+              background: `radial-gradient(circle at 30% 25%, hsl(200 60% ${light + 30}% / 0.5), transparent 55%), linear-gradient(135deg, hsl(210 20% ${light / 2}%), hsl(220 25% 6%))`,
             }}
           />
+        ) : (
+          <img
+            src={coverPath(item)}
+            alt=""
+            loading="lazy"
+            onError={() => setBroken(true)}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
         )}
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3 pt-10">
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/50 to-transparent p-3 pt-12">
           <p className="eyebrow !text-[9px] !text-white/60">{item.kind}</p>
           <p className="truncate text-sm font-semibold">{item.title}</p>
           <p className="truncate text-xs text-white/60">{item.by}</p>
@@ -181,7 +189,14 @@ function Cover({ item }: { item: MediaItem }) {
     </TiltCard>
   )
   return item.href ? (
-    <a href={item.href} target="_blank" rel="noreferrer">
+    <a
+      href={item.href}
+      target="_blank"
+      rel="noreferrer"
+      data-cursor={item.href.includes('spotify') ? 'play' : 'open'}
+      aria-label={`${item.title} by ${item.by}`}
+      onMouseEnter={sfx.tick}
+    >
       {body}
     </a>
   ) : (

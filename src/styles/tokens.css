@@ -4,27 +4,28 @@
  */
 @theme {
   /* Surfaces */
-  --color-ink: #07070a; /* page background */
-  --color-ink-2: #0e0e13; /* raised surfaces */
-  --color-ink-3: #16161d;
-  --color-line: rgb(255 255 255 / 0.09);
-  --color-line-strong: rgb(255 255 255 / 0.18);
+  --color-ink: #040507; /* page background */
+  --color-ink-2: #0a0c10; /* raised surfaces */
+  --color-ink-3: #12151b;
+  --color-line: rgb(200 225 255 / 0.08);
+  --color-line-strong: rgb(200 225 255 / 0.16);
 
   /* Text */
-  --color-fg: #eceef2;
-  --color-fg-muted: #9a9ca8;
-  --color-fg-faint: #5d5f6b;
+  --color-fg: #e4e9ef;
+  --color-fg-muted: #8b94a1;
+  --color-fg-faint: #4d5562;
 
   /* Chrome + iridescent accents */
   --color-chrome-1: #ffffff;
   --color-chrome-2: #c9ced8;
   --color-chrome-3: #7d8391;
   --color-chrome-4: #2c2f37;
-  --color-iri-1: #9ef0ff; /* cyan */
-  --color-iri-2: #c7a4ff; /* lilac */
-  --color-iri-3: #ffb3e6; /* pink */
-  --color-iri-4: #d9ffb3; /* lime */
-  --color-live: #7dffb0;
+  /* "Mono + ice": cold highlights instead of rainbow. */
+  --color-iri-1: #bfeeff; /* ice */
+  --color-iri-2: #7fa6c8; /* steel */
+  --color-iri-3: #eef7ff; /* frost */
+  --color-iri-4: #4d6c8c; /* deep steel */
+  --color-live: #9fe6ff;
 
   /* Type */
   --font-display: 'Unbounded Variable', ui-sans-serif, system-ui, sans-serif;
@@ -55,6 +56,16 @@
     var(--color-iri-2),
     var(--color-iri-3),
     var(--color-iri-4),
+    var(--color-iri-1)
+  );
+  /* Horizontal and starts/ends on the same color, so it tiles with no seam
+     (used for the animated star/number shimmer). */
+  --iri-loop: linear-gradient(
+    90deg,
+    var(--color-iri-1),
+    var(--color-iri-4),
+    var(--color-iri-3),
+    var(--color-iri-2),
     var(--color-iri-1)
   );
   --section-pad: clamp(5rem, 12vw, 10rem);

@@ -1,4 +1,5 @@
 import { motion } from 'motion/react'
+import { copy } from '@/content/copy'
 import { SectionHeading } from '@/components/SectionHeading'
 import { projects } from '@/content/projects'
 import { TiltCard } from '@/fx/TiltCard'
@@ -10,7 +11,7 @@ export function Projects() {
 
   return (
     <section id="work" data-bg="work" className="section">
-      <SectionHeading index="03" eyebrow="selected work" title="Things I've built" />
+      <SectionHeading {...copy.sections.work} />
       <div className="grid gap-6 md:grid-cols-2">
         {projects.map((p, i) => {
           const live = p.repo ? stats?.[p.repo] : undefined

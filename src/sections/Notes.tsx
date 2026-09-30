@@ -1,5 +1,6 @@
 import { motion } from 'motion/react'
 import { Link } from 'react-router'
+import { copy } from '@/content/copy'
 import { SectionHeading } from '@/components/SectionHeading'
 import { notes } from '@/content/notes'
 import { sfx } from '@/lib/sfx'
@@ -7,7 +8,7 @@ import { sfx } from '@/lib/sfx'
 export function Notes() {
   return (
     <section id="notes" data-bg="notes" className="section">
-      <SectionHeading index="05" eyebrow="writing" title="Notes" />
+      <SectionHeading {...copy.sections.notes} />
       <ul className="border-t border-line">
         {notes.map((n, i) => (
           <motion.li

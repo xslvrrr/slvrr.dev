@@ -23,14 +23,22 @@ npm run format     # prettier
 | Social links (and dock order)      | `src/content/links.ts`                           |
 | Projects                           | `src/content/projects.ts`                        |
 | Timeline                           | `src/content/timeline.ts`                        |
-| Favourite albums / games / shows   | `src/content/media.ts`                           |
+| Favourite albums / games / shows   | `src/content/media.ts`, then `npm run covers`    |
+| Section headings, footer lines     | `src/content/copy.ts`                            |
 | Write a note                       | add `src/content/notes/<slug>.mdx` with a `meta` |
 | Colors, fonts, radii, easing       | `src/styles/tokens.css`                          |
 | The 3D chrome look                 | `src/three/heroDefaults.ts` (see below)          |
 | Animated background per section    | `src/styles/backgroundThemes.ts`                 |
 | Section order                      | `src/pages/Home.tsx`                             |
 
-All copy in `src/content/` is placeholder text, so replace it with your own.
+All copy lives in `src/content/`. The bio and section headings are drafts, so rewrite them freely.
+
+### Covers
+
+`npm run covers` downloads artwork for every item in `src/content/media.ts` into
+`public/covers/`. Spotify album links and YouTube links are resolved automatically; for anything
+else, add an `art` URL to the item. Existing files are kept, so delete one to re-fetch it. Items
+without a cover show a generated tile.
 
 ### Finding the look
 
@@ -42,18 +50,21 @@ dev-only and is stripped from production builds.
 For a full reskin, change the tokens in `src/styles/tokens.css`. The 3D reflections read the
 `--color-iri-*` tokens too.
 
-The page background is a small WebGL shader that morphs between themes as you scroll. Each
-section has a `data-bg="<theme>"` attribute, and each theme in `src/styles/backgroundThemes.ts`
-sets its colors, scale, warp, speed and ribbons vs blobs. To add a theme, add an entry there
-and point a section at it.
+The page background is a small WebGL shader in a Balatro-style "crunchy" look: a swirling
+noise field posterized into four colour bands with ordered dithering, drawn as big crisp pixels
+under faint CRT scanlines. It morphs between themes as you scroll. Each section has a
+`data-bg="<theme>"` attribute, and each theme in `src/styles/backgroundThemes.ts` sets its four
+colours, scale, warp, speed, swirl and ribbons vs blobs. To add a theme, add an entry there and
+point a section at it. The pixel size is `PIXEL` in `src/fx/ShaderBackground.tsx`.
 
 ### Performance budget
 
 - The hero renders at most 60 fps and a 1.5× pixel ratio. It pauses behind the splash screen
   and once scrolled out of view, and lowers its resolution or effects if frames drop.
-- The background renders at 1/6 resolution and 30 fps.
+- The background renders one shader pixel per 5×5 CSS pixels, at 30 fps.
 - Avoid `backdrop-filter`, big `filter: blur()` layers and infinite `background-position`
-  animations. Over an animated background they force full-screen repaints every frame.
+  animations on large elements. Over an animated background they force full-screen repaints
+  every frame. The small shimmering `.text-iri` glyphs are fine.
 
 ## Live integrations
 

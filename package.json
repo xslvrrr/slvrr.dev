@@ -10,7 +10,8 @@
     "lint": "oxlint",
     "format": "prettier --write .",
     "preview": "vite preview",
-    "og": "npx -y playwright screenshot --viewport-size=1200,630 --wait-for-timeout=500 scripts/og.html public/og.png"
+    "og": "npx -y playwright screenshot --viewport-size=1200,630 --wait-for-timeout=500 scripts/og.html public/og.png",
+    "covers": "node --experimental-strip-types --no-warnings scripts/covers.mjs"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",

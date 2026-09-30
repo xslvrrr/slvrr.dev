@@ -1,3 +1,4 @@
+import { copy } from '@/content/copy'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { profile } from '@/content/profile'
@@ -13,16 +14,14 @@ export function Footer() {
     <footer data-bg="footer" className="relative overflow-hidden border-t border-line">
       <div className="section flex flex-col gap-16 !pb-10">
         <div className="flex flex-col items-start justify-between gap-8 md:flex-row md:items-end">
-          <p className="max-w-md text-lg text-fg-muted">
-            That's the end of the page. Thanks for scrolling all the way down here.
-          </p>
+          <p className="max-w-md text-lg text-fg-muted">{copy.footer.outro}</p>
           <Magnetic>
             <a
               href="#top"
               data-cursor="up"
               className="grid h-28 w-28 place-items-center rounded-full border border-line-strong font-mono text-xs uppercase tracking-widest transition-colors hover:bg-fg hover:text-ink"
             >
-              back up
+              {copy.footer.backUp}
             </a>
           </Magnetic>
         </div>
@@ -36,7 +35,7 @@ export function Footer() {
           <span>
             © {year} {profile.name}
           </span>
-          <span>built with react, three.js &amp; too much chrome</span>
+          <span>{copy.footer.credit}</span>
           <button
             type="button"
             onClick={() => setStats((v) => !v)}

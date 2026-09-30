@@ -1,5 +1,6 @@
 import { motion, useScroll, useSpring } from 'motion/react'
 import { useRef } from 'react'
+import { copy } from '@/content/copy'
 import { SectionHeading } from '@/components/SectionHeading'
 import { profile } from '@/content/profile'
 import { timeline } from '@/content/timeline'
@@ -15,7 +16,7 @@ export function About() {
 
   return (
     <section id="about" data-bg="about" className="section">
-      <SectionHeading index="04" eyebrow="about me" title={`Hi, I'm ${profile.name}`} />
+      <SectionHeading {...copy.sections.about} />
       <div className="grid gap-16 lg:grid-cols-2">
         <div className="flex flex-col gap-6">
           {profile.bio.map((para, i) => (

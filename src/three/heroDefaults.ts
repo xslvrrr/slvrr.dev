@@ -16,12 +16,12 @@ export const heroDefaults = {
   roughness: 0.08,
   iridescence: 1,
   iridescenceIOR: 1.6,
-  envIntensity: 1.1,
+  envIntensity: 0.95,
   // motion
   spin: 0.12,
   follow: 0.35,
   // post-processing
-  bloom: 0.3,
+  bloom: 0.25,
   bloomThreshold: 0.9,
   aberration: 0.0012,
   grain: 0.06,
