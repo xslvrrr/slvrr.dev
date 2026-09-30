@@ -62,6 +62,8 @@ export function useLanyard(userId: string) {
     let heartbeat: number | undefined
     let retry: number | undefined
     let closed = false
+    // Reconnect with exponential backoff (5s → 60s) instead of hammering the socket.
+    let backoff = 5_000
 
     const connect = () => {
       ws = new WebSocket(SOCKET)
@@ -82,6 +84,7 @@ export function useLanyard(userId: string) {
           msg.op === 0 &&
           (msg.t === 'INIT_STATE' || msg.t === 'PRESENCE_UPDATE')
         ) {
+          backoff = 5_000
           if (isPresence(msg.d)) {
             setPresence({ ...msg.d, activities: msg.d.activities ?? [] })
             setUnmonitored(false)
@@ -96,7 +99,9 @@ export function useLanyard(userId: string) {
       }
       ws.onclose = () => {
         window.clearInterval(heartbeat)
-        if (!closed) retry = window.setTimeout(connect, 5_000)
+        if (closed) return
+        retry = window.setTimeout(connect, backoff)
+        backoff = Math.min(backoff * 2, 60_000)
       }
     }
     connect()

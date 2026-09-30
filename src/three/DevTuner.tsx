@@ -40,10 +40,13 @@ export default function DevTuner({ onChange }: { onChange: (p: HeroParams) => vo
     }),
   }) as HeroParams
 
+  // Leva can hand back a fresh object on every render; only push real changes,
+  // otherwise Scene re-renders (and redraws the canvas) in a loop.
+  const serialized = JSON.stringify(values)
   useEffect(() => {
-    latest = values
-    onChange(values)
-  }, [values, onChange])
+    latest = JSON.parse(serialized) as HeroParams
+    onChange(latest)
+  }, [serialized, onChange])
 
   return (
     <Leva collapsed titleBar={{ title: 'tune the chrome', position: { x: 0, y: 44 } }} />

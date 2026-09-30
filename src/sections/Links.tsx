@@ -18,6 +18,7 @@ import {
   useLanyard,
   type DiscordStatus,
 } from '@/hooks/useLanyard'
+import { ScrambleText } from '@/fx/ScrambleText'
 import { sfx } from '@/lib/sfx'
 
 export function Links() {
@@ -54,7 +55,7 @@ export function Links() {
                       name={l.icon}
                       className="h-4 w-4 text-fg-muted group-hover:text-fg"
                     />
-                    {l.label}
+                    <ScrambleText text={l.label} trigger="hover" />
                   </span>
                   <span className="font-mono text-xs text-fg-faint transition-transform group-hover:translate-x-1 group-hover:text-fg">
                     ↗
@@ -122,13 +123,28 @@ function DiscordCard() {
       <div className="flex items-center justify-between">
         <p className="eyebrow">discord</p>
         <span className="flex items-center gap-2 font-mono text-xs text-fg-muted">
-          <span
-            className="h-2 w-2 rounded-full"
-            style={{
-              background: statusColor[p?.discord_status ?? 'offline'],
-              boxShadow: `0 0 12px ${statusColor[p?.discord_status ?? 'offline']}`,
-            }}
-          />
+          <span className="relative grid h-2 w-2 place-items-center">
+            {/* radar ping while online (transform + opacity only) */}
+            {p && p.discord_status !== 'offline' && (
+              <>
+                <span
+                  className="absolute inset-0 animate-ping rounded-full opacity-60"
+                  style={{ background: statusColor[p.discord_status] }}
+                />
+                <span
+                  className="absolute inset-0 animate-ping rounded-full opacity-40 [animation-delay:0.5s]"
+                  style={{ background: statusColor[p.discord_status] }}
+                />
+              </>
+            )}
+            <span
+              className="relative h-2 w-2 rounded-full"
+              style={{
+                background: statusColor[p?.discord_status ?? 'offline'],
+                boxShadow: `0 0 12px ${statusColor[p?.discord_status ?? 'offline']}`,
+              }}
+            />
+          </span>
           {
             {
               live: p?.discord_status,

@@ -1,14 +1,23 @@
+import {
+  AnimatePresence,
+  motion,
+  useMotionValue,
+  useSpring,
+  useTransform,
+  type MotionValue,
+} from 'motion/react'
+import { useEffect, useRef, useState, type RefObject } from 'react'
 import { copy } from '@/content/copy'
-import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useState } from 'react'
 import { profile } from '@/content/profile'
 import { Magnetic } from '@/fx/Magnetic'
+import { resurface } from '@/lib/resurface'
 import { modeStore, useStore } from '@/lib/store'
 
 const year = new Date().getFullYear()
 
 export function Footer() {
   const [stats, setStats] = useState(false)
+  const [ripples, setRipples] = useState<number[]>([])
 
   return (
     <footer data-bg="footer" className="relative overflow-hidden border-t border-line">
@@ -19,18 +28,33 @@ export function Footer() {
             <a
               href="#top"
               data-cursor="up"
-              className="grid h-28 w-28 place-items-center rounded-full border border-line-strong font-mono text-xs uppercase tracking-widest transition-colors hover:bg-fg hover:text-ink"
+              onClick={(e) => {
+                e.preventDefault()
+                setRipples((r) => [...r, Date.now()])
+                resurface()
+              }}
+              className="relative grid h-28 w-28 place-items-center rounded-full border border-line-strong font-mono text-xs uppercase tracking-widest transition-colors hover:bg-fg hover:text-ink"
             >
               {copy.footer.backUp}
+              <AnimatePresence>
+                {ripples.map((id) => (
+                  <motion.span
+                    key={id}
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 rounded-full border border-iri-1"
+                    initial={{ scale: 1, opacity: 0.9 }}
+                    animate={{ scale: 2.6, opacity: 0 }}
+                    transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+                    onAnimationComplete={() =>
+                      setRipples((r) => r.filter((x) => x !== id))
+                    }
+                  />
+                ))}
+              </AnimatePresence>
             </a>
           </Magnetic>
         </div>
-        <p
-          className="select-none text-center font-display -my-[0.1em] py-[0.1em] text-[22vw] font-black uppercase leading-none tracking-tighter text-chrome"
-          aria-hidden
-        >
-          {profile.name}
-        </p>
+        <WaveWord word={profile.name} />
         <div className="flex flex-wrap items-center justify-between gap-4 font-mono text-[11px] uppercase tracking-widest text-fg-faint">
           <span>
             © {year} {profile.name}
@@ -51,6 +75,92 @@ export function Footer() {
         {stats && <StatsOverlay onClose={() => setStats(false)} />}
       </AnimatePresence>
     </footer>
+  )
+}
+
+/**
+ * The big chrome wordmark. Sized in container units (cqw) so it always fits its
+ * column (vw overflowed on wide laptops, where the column is capped), and the
+ * letters ripple upward as the cursor passes over them.
+ */
+function WaveWord({ word }: { word: string }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const mouseX = useMotionValue(-1e5)
+  // Letter centres relative to the container, measured on pointer enter
+  // instead of reading layout on every move.
+  const centers = useRef<number[]>([])
+  const spread = useRef(1)
+
+  const measure = () => {
+    const el = ref.current
+    if (!el) return
+    const box = el.getBoundingClientRect()
+    const letters = [...el.querySelectorAll<HTMLElement>('[data-letter]')]
+    centers.current = letters.map((l) => {
+      const r = l.getBoundingClientRect()
+      return r.left - box.left + r.width / 2
+    })
+    spread.current = box.width / Math.max(1, letters.length)
+  }
+
+  return (
+    <div
+      ref={ref}
+      aria-hidden
+      className="@container select-none"
+      onPointerEnter={measure}
+      onPointerMove={(e) => {
+        if (e.pointerType !== 'mouse') return
+        mouseX.set(e.clientX - e.currentTarget.getBoundingClientRect().left)
+      }}
+      onPointerLeave={() => mouseX.set(-1e5)}
+    >
+      <p className="-my-[0.1em] flex justify-center py-[0.1em] font-display text-[24cqw] font-black uppercase leading-none tracking-tighter">
+        {[...word].map((ch, i) => (
+          <WaveLetter
+            key={i}
+            ch={ch}
+            index={i}
+            mouseX={mouseX}
+            centers={centers}
+            spread={spread}
+          />
+        ))}
+      </p>
+    </div>
+  )
+}
+
+function WaveLetter({
+  ch,
+  index,
+  mouseX,
+  centers,
+  spread,
+}: {
+  ch: string
+  index: number
+  mouseX: MotionValue<number>
+  centers: RefObject<number[]>
+  spread: RefObject<number>
+}) {
+  const near = useTransform(mouseX, (x) => {
+    const c = centers.current[index]
+    if (c === undefined) return 0
+    return Math.max(0, 1 - Math.abs(x - c) / (spread.current * 1.4))
+  })
+  const n = useSpring(near, { stiffness: 220, damping: 16, mass: 0.6 })
+  const y = useTransform(n, [0, 1], ['0%', '-10%'])
+  const scaleY = useTransform(n, [0, 1], [1, 1.08])
+
+  return (
+    <motion.span
+      data-letter
+      className="text-chrome inline-block origin-bottom"
+      style={{ y, scaleY }}
+    >
+      {ch}
+    </motion.span>
   )
 }
 

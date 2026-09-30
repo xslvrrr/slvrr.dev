@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react'
 
 /** Tiny global store: enough for a handful of site-wide flags. */
-function createStore<T>(initial: T) {
+export function createStore<T>(initial: T) {
   let value = initial
   const listeners = new Set<() => void>()
   return {

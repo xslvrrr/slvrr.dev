@@ -37,8 +37,9 @@ All copy lives in `src/content/`. The bio and section headings are drafts, so re
 
 `npm run covers` downloads artwork for every item in `src/content/media.ts` into
 `public/covers/`. Spotify album links and YouTube links are resolved automatically; for anything
-else, add an `art` URL to the item. Existing files are kept, so delete one to re-fetch it. Items
-without a cover show a generated tile.
+else, add an `art` URL to the item. Existing files are kept, so delete one to re-fetch it. Set
+`swatch: '#hex'` instead to use a flat colour as the cover (like solace's pink). Items without a
+cover show a generated tile. Covers sit in 3D jewel cases (`src/fx/JewelCase.tsx`).
 
 ### Finding the look
 
@@ -65,6 +66,9 @@ point a section at it. The pixel size is `PIXEL` in `src/fx/ShaderBackground.tsx
 - Avoid `backdrop-filter`, big `filter: blur()` layers and infinite `background-position`
   animations on large elements. Over an animated background they force full-screen repaints
   every frame. The small shimmering `.text-iri` glyphs are fine.
+- Animate `transform` and `opacity` only, and only run a `requestAnimationFrame` loop while
+  something is actually moving (see `ScrambleText`, `useVisualizer`). Wrap infinite CSS
+  animations in an element using `usePauseOffscreen` so they stop while scrolled away.
 
 ## Live integrations
 
@@ -76,6 +80,11 @@ Each widget falls back to static content if its data source is missing or fails.
   `profile.lastfmUser`, then add `LASTFM_API_KEY`
   ([get one](https://www.last.fm/api/account/create)) to the Vercel project's environment
   variables. The key stays server-side in `api/lastfm.ts`.
+- **Listen along** plays a 30-second preview of your current Last.fm track, found on Deezer (or
+  iTunes as a fallback) by `api/preview.ts` with no key needed. Audio streams through
+  `api/audio.ts`, a same-origin proxy limited to preview CDNs, so the visualizer can read it.
+  When your track changes the player follows along, and the miniplayer stays at the bottom of
+  the screen across pages until closed.
 - **GitHub stats** for projects with a `repo` come from `api/github.ts`, cached for an hour.
   `GITHUB_TOKEN` is optional and only raises the rate limit.
 
@@ -101,11 +110,12 @@ to the SPA so `/notes/...` links work.
 ## Layout
 
 ```
-api/            Vercel functions (lastfm, github)
+api/            Vercel functions (lastfm, github, preview, audio)
 src/content/    all copy and data, typed, with no JSX
 src/sections/   page sections (Splash, Hero, Links, NowPlaying, Projects, About, Notes, Footer)
+src/components/ Nav, GlitchHandle, MiniPlayer, SectionHeading, Icon, ErrorBoundary
 src/three/      the chrome blob: shader material, studio lighting, scene, dev tuner
-src/fx/         reusable effects: Cursor, Magnetic, TiltCard, TextReveal, Marquee, ShaderBackground
-src/hooks/      useLanyard, useNowPlaying, useRepoStats, useKonami, useFinePointer
-src/lib/        tiny global store, synthesized sfx, helpers
+src/fx/         effects: Cursor, JewelCase, ScrambleText, ScanReveal, Resurface, TiltCard, Marquee, ShaderBackground…
+src/hooks/      useLanyard, useVisualizer, usePauseOffscreen, useRepoStats, useKonami, useFinePointer
+src/lib/        global stores (Last.fm feed, player), synthesized sfx, helpers
 ```

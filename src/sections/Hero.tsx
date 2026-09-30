@@ -111,12 +111,19 @@ function Letter({
   play: boolean
 }) {
   const ref = useRef<HTMLSpanElement>(null)
+  // Layout is read at most every 200ms (not on every pointer move); the letter
+  // barely moves in between, so the cached centre is plenty accurate.
+  const box = useRef({ center: 0, width: 1, at: -1e9 })
   const near = useTransform(mouseX, (x) => {
     const el = ref.current
     if (!el) return 0
-    const r = el.getBoundingClientRect()
-    const d = Math.abs(x - (r.left + r.width / 2))
-    return Math.max(0, 1 - d / (r.width * 1.6))
+    const now = performance.now()
+    if (now - box.current.at > 200) {
+      const r = el.getBoundingClientRect()
+      box.current = { center: r.left + r.width / 2, width: r.width, at: now }
+    }
+    const d = Math.abs(x - box.current.center)
+    return Math.max(0, 1 - d / (box.current.width * 1.6))
   })
   const n = useSpring(near, { stiffness: 180, damping: 22 })
   const fontWeight = useTransform(n, [0, 1], [880, 220])

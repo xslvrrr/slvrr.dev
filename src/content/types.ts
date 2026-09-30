@@ -54,7 +54,7 @@ export interface TimelineEntry {
 }
 
 export interface MediaItem {
-  kind: 'album' | 'game' | 'show' | 'book'
+  kind: 'album' | 'ep' | 'game' | 'show' | 'book'
   title: string
   by: string
   /** Where clicking the cover goes (Spotify album, store page, video…). */
@@ -64,4 +64,6 @@ export interface MediaItem {
    * `href` (Spotify and YouTube links are resolved automatically).
    */
   art?: string
+  /** A flat colour used as the cover instead of an image (e.g. solace's pink). */
+  swatch?: string
 }

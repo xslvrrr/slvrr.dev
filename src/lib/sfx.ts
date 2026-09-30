@@ -51,6 +51,24 @@ export const sfx = {
     tone(880, 0, 0.12, 0.04, 'square')
     tone(1760, 0.02, 0.1, 0.02, 'sine')
   },
+  /** Rising sweep for the footer's "resurface" transition. */
+  resurface() {
+    const a = audio()
+    if (!a) return
+    const t = a.currentTime
+    const osc = a.createOscillator()
+    const g = a.createGain()
+    osc.type = 'sine'
+    osc.frequency.setValueAtTime(180, t)
+    osc.frequency.exponentialRampToValueAtTime(1400, t + 1.1)
+    g.gain.setValueAtTime(0, t)
+    g.gain.linearRampToValueAtTime(0.035, t + 0.15)
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 1.25)
+    osc.connect(g).connect(a.destination)
+    osc.start(t)
+    osc.stop(t + 1.3)
+    tone(1567.98, 1.05, 0.6, 0.03, 'triangle')
+  },
   /** Rising arpeggio for the Konami unlock. */
   unlock() {
     ;[392, 523.25, 659.25, 783.99, 1046.5, 1567.98].forEach((f, i) =>

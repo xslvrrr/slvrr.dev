@@ -118,6 +118,51 @@
       radial-gradient(ellipse at center, transparent 55%, rgb(0 0 0 / 0.55) 100%);
   }
 
+  /* Wake under the resurface waterline: ice wash + 4px checker dither. */
+  .resurface-wake {
+    background:
+      repeating-conic-gradient(rgb(4 5 7 / 0.55) 0 25%, transparent 0 50%) 0 0 / 8px 8px,
+      linear-gradient(
+        to bottom,
+        rgb(127 166 200 / 0.55),
+        rgb(10 14 20 / 0.92) 35%,
+        transparent
+      );
+  }
+
+  /* Paints its background only in a 1.5px ring (the jewel case's edge glint). */
+  .edge-glint {
+    padding: 1.5px;
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+  }
+
+  /* Equalizer bar idle animation (transform-only; see NowPlaying). */
+  .eq-bar {
+    animation: eq 1.2s ease-in-out infinite alternate;
+  }
+
+  /* Notes: the title splits into an ice/red chromatic offset on hover. */
+  .chroma-hover {
+    transition:
+      text-shadow 0.35s var(--ease-out-expo),
+      transform 0.5s var(--ease-out-expo);
+  }
+  .group:hover .chroma-hover {
+    text-shadow:
+      -3px 0 rgb(159 230 255 / 0.75),
+      3px 0 rgb(255 60 90 / 0.55);
+  }
+
+  /* Set by usePauseOffscreen: nothing animates while it can't be seen. */
+  [data-offscreen],
+  [data-offscreen] * {
+    animation-play-state: paused !important;
+  }
+
   .fade-bottom {
     -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent);
     mask-image: linear-gradient(to bottom, #000 62%, transparent);
@@ -145,6 +190,18 @@
     font-size: clamp(2.25rem, 7vw, 5.5rem);
     line-height: 0.95;
     letter-spacing: -0.03em;
+  }
+}
+
+@keyframes eq {
+  0% {
+    transform: scaleY(0.15);
+  }
+  45% {
+    transform: scaleY(0.85);
+  }
+  100% {
+    transform: scaleY(0.35);
   }
 }
 

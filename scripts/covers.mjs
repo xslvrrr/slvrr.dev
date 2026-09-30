@@ -31,6 +31,10 @@ let failed = 0
 for (const item of media) {
   const out = new URL('.' + coverPath(item), root + '/')
   const name = `${item.by} – ${item.title}`
+  if (item.swatch) {
+    console.log(`■ ${name} (flat colour, no image needed)`)
+    continue
+  }
   if (existsSync(out)) {
     console.log(`✓ ${name} (exists)`)
     continue

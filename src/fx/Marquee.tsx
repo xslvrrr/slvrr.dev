@@ -10,6 +10,7 @@ import {
   wrap,
 } from 'motion/react'
 import { useRef } from 'react'
+import { usePauseOffscreen } from '@/hooks/usePauseOffscreen'
 
 /**
  * Endless ticker that speeds up, reverses and skews with scroll velocity.
@@ -24,6 +25,8 @@ export function Marquee({ items, speed = 3 }: { items: string[]; speed?: number 
   const dir = useRef(-1)
   const ref = useRef<HTMLDivElement>(null)
   const visible = useInView(ref)
+  // Also pause the shimmering star glyphs' CSS animation while off screen.
+  usePauseOffscreen(ref)
 
   useAnimationFrame((_, delta) => {
     if (!visible) return

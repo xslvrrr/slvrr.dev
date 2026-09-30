@@ -2,8 +2,10 @@ import { ReactLenis, useLenis } from 'lenis/react'
 import { AnimatePresence, motion, MotionConfig } from 'motion/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Route, Routes, useLocation } from 'react-router'
+import { MiniPlayer } from '@/components/MiniPlayer'
 import { Nav } from '@/components/Nav'
 import { Cursor } from '@/fx/Cursor'
+import { ResurfaceOverlay } from '@/fx/Resurface'
 import { ShaderBackground } from '@/fx/ShaderBackground'
 import { useKonami } from '@/hooks/useKonami'
 import { sfx } from '@/lib/sfx'
@@ -49,7 +51,7 @@ export default function App() {
         <AnimatePresence>
           {toast && (
             <motion.div
-              className="panel fixed bottom-6 left-1/2 z-[80] -translate-x-1/2 px-5 py-3 font-mono text-xs uppercase tracking-widest"
+              className="panel fixed bottom-24 left-1/2 z-[80] -translate-x-1/2 px-5 py-3 font-mono text-xs uppercase tracking-widest"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 30 }}
@@ -58,6 +60,8 @@ export default function App() {
             </motion.div>
           )}
         </AnimatePresence>
+        <MiniPlayer />
+        <ResurfaceOverlay />
       </MotionConfig>
     </ReactLenis>
   )

@@ -19,8 +19,12 @@ function devApi(): Plugin {
         if (!name) return next()
         try {
           const mod = await server.ssrLoadModule(`/api/${name}.ts`)
+          const headers = new Headers()
+          for (const [k, v] of Object.entries(req.headers)) {
+            if (typeof v === 'string') headers.set(k, v)
+          }
           const response: Response = await mod.GET(
-            new Request(new URL(req.url!, 'http://localhost')),
+            new Request(new URL(req.url!, 'http://localhost'), { headers }),
           )
           res.statusCode = response.status
           response.headers.forEach((v, k) => res.setHeader(k, v))

@@ -1,7 +1,8 @@
-import { motion } from 'motion/react'
 import { copy } from '@/content/copy'
 import { SectionHeading } from '@/components/SectionHeading'
 import { projects } from '@/content/projects'
+import { ScanReveal } from '@/fx/ScanReveal'
+import { ScrambleText } from '@/fx/ScrambleText'
 import { TiltCard } from '@/fx/TiltCard'
 import { useRepoStats } from '@/hooks/useRepoStats'
 import { sfx } from '@/lib/sfx'
@@ -41,7 +42,7 @@ export function Projects() {
                       key={t}
                       className="rounded-full border border-line px-3 py-1 font-mono text-[11px] uppercase tracking-wider text-fg-muted"
                     >
-                      {t}
+                      <ScrambleText text={t} />
                     </li>
                   ))}
                 </ul>
@@ -49,17 +50,7 @@ export function Projects() {
             </TiltCard>
           )
           return (
-            <motion.div
-              key={p.name}
-              initial={{ opacity: 0, y: 60 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '0px 0px -10% 0px' }}
-              transition={{
-                delay: (i % 2) * 0.12,
-                duration: 0.9,
-                ease: [0.16, 1, 0.3, 1],
-              }}
-            >
+            <ScanReveal key={p.name} delay={(i % 2) * 0.15}>
               {href ? (
                 <a
                   href={href}
@@ -74,7 +65,7 @@ export function Projects() {
               ) : (
                 card
               )}
-            </motion.div>
+            </ScanReveal>
           )
         })}
       </div>

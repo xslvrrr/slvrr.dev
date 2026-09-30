@@ -3,7 +3,7 @@ import type { Profile } from './types'
 export const profile: Profile = {
   name: 'slvrr',
   handle: '@sxvrce',
-  tagline: 'developer, tinkerer, artist',
+  tagline: 'developer. tinkerer. artist. mostly after dark.',
   roles: ['software', 'tools', 'noise', 'things that shine'],
   // Draft bio: rewrite in your own words.
   bio: [

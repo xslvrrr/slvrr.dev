@@ -69,7 +69,7 @@ export const bgThemes = {
     warp: 1.05,
     speed: 0.3,
     ribbons: 0.1,
-    intensity: 0.85,
+    intensity: 0.7,
     swirl: 0.5,
   },
   notes: {
