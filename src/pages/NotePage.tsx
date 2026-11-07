@@ -23,7 +23,11 @@ export default function NotePage() {
   }, [note])
 
   return (
-    <main data-bg="notes" className="mx-auto max-w-3xl px-4 pb-32 pt-32 md:px-8 md:pt-44">
+    <main
+      data-bg="notes"
+      data-landmark="graves"
+      className="mx-auto max-w-3xl px-4 pb-32 pt-32 md:px-8 md:pt-44"
+    >
       {/* Long-form reading sits on a dark page so the storm never gets in the way. */}
       <div
         aria-hidden

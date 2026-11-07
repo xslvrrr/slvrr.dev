@@ -1,5 +1,6 @@
 import { motion } from 'motion/react'
 import { useRef, useState } from 'react'
+import { Landmark } from '@/components/ExploreTrack'
 import { SectionHeading } from '@/components/SectionHeading'
 import { copy } from '@/content/copy'
 import { media } from '@/content/media'
@@ -25,12 +26,13 @@ export function NowPlaying() {
   const listening = player.status === 'playing'
 
   return (
-    <section id="music" data-bg="music" className="section">
+    // A fountain: music, like water, never stops for long.
+    <section id="music" data-bg="music" data-landmark="fountain" className="section">
       <SectionHeading {...copy.sections.music} />
-      <div className="grid gap-8 lg:grid-cols-[1fr_1.2fr]">
+      <div className="grid gap-8 lg:grid-cols-[1fr_1.2fr] explore:flex explore:items-start explore:gap-0">
         <div
           ref={panel}
-          className="panel flex flex-col items-center gap-8 p-8 sm:flex-row lg:flex-col xl:flex-row"
+          className="panel flex flex-col items-center gap-8 p-8 sm:flex-row lg:flex-col xl:flex-row explore:w-[34vw] explore:flex-row explore:gap-6 explore:p-6"
         >
           <Vinyl art={np?.art ?? null} spinning={live || listening} />
           <div className="flex min-w-0 flex-1 flex-col gap-3 self-stretch">
@@ -76,7 +78,8 @@ export function NowPlaying() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-3">
+        <Landmark className="w-[28vw]" />
+        <div className="grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-3 explore:w-[min(36vw,58vh)] explore:gap-y-5">
           {media.map((m, i) => (
             <motion.div
               key={m.title + i}
@@ -153,7 +156,7 @@ function ListenAlong({ disabled }: { disabled: boolean }) {
 
 function Vinyl({ art, spinning }: { art: string | null; spinning: boolean }) {
   return (
-    <div className="relative aspect-square w-48 shrink-0 md:w-56">
+    <div className="relative aspect-square w-48 shrink-0 md:w-56 explore:w-[min(11vw,22vh)]">
       {/* CSS spin (transform only) that pauses in place instead of snapping back */}
       <div
         className="absolute inset-0 animate-[spin_3.2s_linear_infinite] rounded-full shadow-[0_20px_60px_-10px_rgb(0_0_0/0.9)]"
@@ -168,12 +171,12 @@ function Vinyl({ art, spinning }: { art: string | null; spinning: boolean }) {
           className="absolute inset-0 rounded-full opacity-40"
           style={{
             background:
-              'conic-gradient(from 0deg, transparent 0 10%, rgb(255 240 210 / 0.2) 10% 15%, transparent 15% 60%, rgb(240 184 79 / 0.2) 60% 65%, transparent 65%)',
+              'conic-gradient(from 0deg, transparent 0 10%, rgb(255 255 255 / 0.2) 10% 15%, transparent 15% 60%, rgb(200 200 205 / 0.15) 60% 65%, transparent 65%)',
           }}
         />
         <div className="absolute inset-[30%] overflow-hidden rounded-full border-4 border-ink">
           {art ? (
-            <img src={art} alt="" className="h-full w-full object-cover" />
+            <img src={art} alt="" className="mono-img h-full w-full object-cover" />
           ) : (
             <div
               className="h-full w-full"
@@ -226,12 +229,12 @@ function Cover({ item }: { item: MediaItem }) {
   const light = 40 + (hash(item.title + item.by) % 30)
 
   const art = item.swatch ? (
-    <div className="h-full w-full" style={{ background: item.swatch }} />
+    <div className="mono-img h-full w-full" style={{ background: item.swatch }} />
   ) : broken ? (
     <div
       className="h-full w-full"
       style={{
-        background: `radial-gradient(circle at 30% 25%, hsl(38 70% ${light + 20}% / 0.45), transparent 55%), linear-gradient(135deg, hsl(265 20% ${light / 2}%), hsl(250 25% 6%))`,
+        background: `radial-gradient(circle at 30% 25%, hsl(0 0% ${light + 25}% / 0.4), transparent 55%), linear-gradient(135deg, hsl(0 0% ${light / 2}%), hsl(0 0% 5%))`,
       }}
     />
   ) : (
@@ -243,7 +246,7 @@ function Cover({ item }: { item: MediaItem }) {
       loading="lazy"
       decoding="async"
       onError={() => setBroken(true)}
-      className="h-full w-full object-cover"
+      className="mono-img h-full w-full object-cover"
     />
   )
 

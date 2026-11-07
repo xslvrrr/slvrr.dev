@@ -9,20 +9,24 @@ import {
   type MotionValue,
 } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
+import { Landmark } from '@/components/ExploreTrack'
 import { PixelCross } from '@/components/PixelCross'
 import { profile } from '@/content/profile'
 import { useFinePointer } from '@/hooks/useFinePointer'
+import { useExplore } from '@/lib/explore'
 import { strike } from '@/lib/storm'
 import { enteredStore, useStore } from '@/lib/store'
 
 /**
- * A title screen: the cathedral (drawn by the page background, NightScene)
- * stands behind the name. Clicking anywhere calls down the lightning.
+ * A title screen at the churchyard gate: the cathedral (drawn by the page
+ * background, NightScene) stands beyond it. Clicking anywhere calls down the
+ * lightning. While exploring, the name sits to the left and the gate right.
  */
 export function Hero() {
   const ref = useRef<HTMLElement>(null)
   const fine = useFinePointer()
   const entered = useStore(enteredStore)
+  const exploring = useExplore()
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ['start start', 'end start'],
@@ -36,22 +40,24 @@ export function Hero() {
     <section
       ref={ref}
       data-bg="hero"
-      className="relative h-svh min-h-[560px] overflow-hidden"
+      data-landmark="gate"
+      className="relative h-svh min-h-[560px] overflow-hidden explore:w-screen explore:shrink-0"
       onPointerMove={(e) => mouseX.set(e.clientX)}
       onPointerLeave={() => mouseX.set(-9999)}
       onClick={(e) => strike(e.clientX / window.innerWidth, true)}
     >
+      <Landmark className="absolute inset-y-0 right-[6vw] w-[36vw]" />
       <motion.div
-        className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center pb-[12vh]"
-        style={{ y: textY, opacity: fade }}
+        className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center pb-[12vh] explore:items-start explore:pl-[7vw]"
+        style={exploring ? undefined : { y: textY, opacity: fade }}
       >
-        <p className="eyebrow pixel-shadow mb-2 flex items-center gap-3 px-6 text-center !text-fg/80">
+        <p className="eyebrow pixel-shadow mb-2 flex items-center gap-3 px-6 text-center !text-fg/80 explore:px-0">
           <PixelCross className="h-3 w-2 shrink-0 text-glass-1" />
           {profile.tagline}
           <PixelCross className="h-3 w-2 shrink-0 text-glass-1" />
         </p>
         <h1
-          className="pixel-shadow flex font-display text-[30vw] leading-none text-fg md:text-[21vw]"
+          className="pixel-shadow flex font-display text-[30vw] leading-none text-fg md:text-[21vw] explore:text-[min(19vw,34vh)]"
           aria-label={profile.name}
         >
           {[...profile.name].map((ch, i) => (
@@ -63,14 +69,14 @@ export function Hero() {
 
       <motion.div
         className="pointer-events-none absolute inset-x-0 bottom-6 z-10 flex items-end justify-between px-4 font-mono text-[10px] uppercase tracking-widest text-fg-muted md:px-8"
-        style={{ opacity: fade }}
+        style={exploring ? undefined : { opacity: fade }}
       >
         <span className="pixel-shadow">
           {profile.location ? `based on ${profile.location}` : ''}
         </span>
         <span className="pixel-shadow flex flex-col items-center gap-2">
-          descend
-          <span className="flex flex-col gap-1" aria-hidden>
+          {exploring ? 'scroll to wander' : 'descend'}
+          <span className="flex flex-col gap-1 explore:flex-row" aria-hidden>
             {[0, 1, 2].map((i) => (
               <motion.span
                 key={i}
@@ -160,7 +166,7 @@ function Roles() {
   }, [])
 
   return (
-    <p className="pixel-shadow mt-4 flex items-center gap-2 font-mono text-xs uppercase tracking-widest md:text-sm">
+    <p className="pixel-shadow mt-4 flex items-center gap-2 font-mono text-xs uppercase tracking-widest md:text-sm explore:mt-2">
       <span className="text-fg/60">i make</span>
       {/* An invisible copy of the longest role sizes the slot, so nothing gets cut off. */}
       <span className="relative inline-grid h-[1.8em] items-center overflow-hidden">

@@ -59,7 +59,11 @@ export function MiniPlayer() {
             data-cursor="open"
           >
             {track.cover && (
-              <img src={track.cover} alt="" className="h-full w-full object-cover" />
+              <img
+                src={track.cover}
+                alt=""
+                className="mono-img h-full w-full object-cover"
+              />
             )}
           </a>
 

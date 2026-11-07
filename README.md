@@ -1,10 +1,10 @@
 # slvrr.dev
 
 A personal landing page in the style of carrd / guns.lol, with a lot more going on. **V2
-("vespers")** is pixel-art gothic: night in the garden outside a cathedral, in a storm. A
-hand-drawn (well, code-drawn) pixel scene with rain, fog, lightning you can call down,
-candlelit stained glass, a magnifying link dock, live Discord presence, Last.fm "now playing",
-project cards with a stained-glass tilt, MDX notes and a few secrets.
+("vespers")** is monochrome pixel-art gothic: a walk through a night garden around a cathedral,
+in a storm. On wide screens you scroll sideways past statues and landmarks, one per section,
+with rain, fog, lightning you can call down, candlelit windows, a magnifying link dock, live Discord presence, Last.fm "now playing",
+project cards with a glassy tilt, MDX notes and a few secrets.
 
 Built with **Vite + React + TypeScript**, **Tailwind CSS v4**, **Motion**, **WebGL**, **Lenis** and
 **MDX**. Deployed on **Vercel**. (V1, the liquid-chrome version, is in the git history before the V2 redesign.)
@@ -29,7 +29,8 @@ npm run format     # prettier
 | Section headings, footer lines     | `src/content/copy.ts`                            |
 | Write a note                       | add `src/content/notes/<slug>.mdx` with a `meta` |
 | Colors, fonts, radii, easing       | `src/styles/tokens.css`                          |
-| The cathedral and garden           | `src/scene/buildScene.ts` (see below)            |
+| The garden, landmarks, cathedral   | `src/scene/` (see below)                         |
+| Statues                            | `src/scene/sprites.ts`                           |
 | Weather / sky per section          | `src/styles/backgroundThemes.ts`                 |
 | Section order                      | `src/pages/Home.tsx`                             |
 
@@ -43,37 +44,60 @@ else, add an `art` URL to the item. Existing files are kept, so delete one to re
 `swatch: '#hex'` instead to use a flat colour as the cover (like solace's pink). Items without a
 cover show a generated tile. Covers sit in 3D jewel cases (`src/fx/JewelCase.tsx`).
 
-### The night scene
+### The garden walk
 
-The whole page sits over one small WebGL scene (`src/fx/NightScene.tsx`), drawn as big crisp
-pixels (one scene pixel is 2–5 CSS pixels, so the screen is ~250 scene pixels tall):
+The home page is a walk through a night garden around a cathedral. Each section is a stop at a
+**landmark** (its `data-landmark` attribute):
 
-- **Sky**: storm clouds posterized into four colour bands with ordered (Bayer) dithering, stars in
-  the gaps, and a moon whose light catches the cloud edges.
-- **Cathedral and garden**: drawn procedurally into two data textures by
-  `src/scene/buildScene.ts` (twin spires, rose window, a door left ajar; iron fence, lanterns,
-  gravestones, cypresses, an angel, dead trees). Pixels store _materials_, not colours (see
+| Section | Landmark                                    |
+| ------- | ------------------------------------------- |
+| Hero    | `gate`: the churchyard gate, lanterns lit   |
+| Links   | `herald`: an angel sounding a trumpet       |
+| Music   | `fountain`: a fountain with a cherub        |
+| Work    | `mausoleum`: where the relics are kept      |
+| About   | `shrine`: a Madonna, candles, a hooded monk |
+| Notes   | `graves`: a weeping angel on a tomb         |
+| Footer  | `calvary`: a tall cross between two angels  |
+
+On wide screens (≥1024×600, see `EXPLORE_QUERY` in `src/lib/explore.ts` and the `explore:`
+Tailwind variant) the page is a **side-scroller**: `src/components/ExploreTrack.tsx` lays the
+sections side by side and scrolling (or swiping sideways) walks you along them. Each section
+leaves a gap (`<Landmark />`) where its landmark stands in the garden, and the garden moves
+exactly with the content. On phones the page stays vertical and the background walks from
+landmark to landmark between sections instead.
+
+The scene (`src/fx/NightScene.tsx`) is drawn as big crisp pixels (one scene pixel is 2–5 CSS
+pixels, so the screen is ~250 scene pixels tall), in greys:
+
+- **Sky**: storm clouds posterized into four bands with ordered (Bayer) dithering, stars in the
+  gaps, a moon that lights the cloud edges.
+- **Three parallax layers**, drawn procedurally by `src/scene/buildScene.ts`: the far cathedral
+  (`cathedral.ts`) over a distant tree line; the garden, as wide as the walk, with each landmark
+  (at double size) and statues, lamps, graves and cypresses in between; and dark foreground
+  silhouettes that sweep past faster. Pixels store _materials_, not colours (see
   `src/scene/layers.ts`), so the shader can light them: moonlight on edges facing the moon,
-  flickering candlelit glass, lightning outlining everything.
-- **Weather**: two layers of pixel rain, ground fog, and lightning. Click the hero to call a
-  strike down (with thunder, if sound is on); the storm also strikes on its own.
-- **Scroll**: the layers slide at different speeds, so you slowly descend from the spires into
-  the churchyard. Each section has a `data-bg="<theme>"` attribute, and each theme in
-  `src/styles/backgroundThemes.ts` sets its sky colours, rain, storm (strikes per minute), cloud
-  cover, fog, candlelight and wind; the weather blends between them as you scroll.
+  flickering candlelit glass, falling water, lightning outlining everything.
+- **Statues** are hand-drawn pixel sprites in `src/scene/sprites.ts` (praying angel, herald,
+  weeper, monk, Madonna, cherub, bust, urn). Add one there and place it in `buildScene.ts`.
+- **Weather**: two layers of pixel rain, ground fog, lightning. Click the hero to call a strike
+  down (with thunder, if sound is on); the storm also strikes on its own. Each section's
+  `data-bg` theme in `src/styles/backgroundThemes.ts` sets its sky, rain, storm (strikes per
+  minute), cloud cover, fog, candlelight and wind, blended as you walk.
 
-To change the architecture, edit the drawing functions in `buildScene.ts`: everything is in
-"design units" (`D`) relative to the facade, so it scales to any screen. In `npm run dev`, call
-`strike()` in the console to test the lightning.
+In `npm run dev`, call `strike()` in the console to test the lightning.
 
-Fonts: **Jacquard 24** (pixel blackletter) for display, **Pixelify Sans** for reading,
+The site is monochrome: photos (album covers, avatars) stay grey until hovered. Fonts are
+**Jacquard 24** (pixel blackletter) for display, **Pixelify Sans** for reading and
 **Silkscreen** for labels. Panels use a pixel-art nine-slice frame (`.panel` in
 `src/styles/index.css`).
 
 ### Performance budget
 
 - The night scene renders one shader pixel per 2–5 CSS pixels (about 250 rows), at 30 fps, and
-  stops while the tab is hidden. The cathedral and garden are drawn once, on load and resize.
+  stops while the tab is hidden. The garden is drawn once, and again only when the layout
+  moves a landmark (resize, fonts loading, a live widget changing size).
+- Inside the sideways track, `position: fixed` doesn't work (the track is transformed), so
+  overlays there are portalled to `document.body` (see the footer's stats panel).
 - Avoid `backdrop-filter`, big `filter: blur()` layers and infinite `background-position`
   animations on large elements. Over an animated background they force full-screen repaints
   every frame. The small shimmering `.text-glass` glyphs are fine.
@@ -113,7 +137,7 @@ to the SPA so `/notes/...` links work.
 - The splash screen's doors open with a click, which unlocks audio (a church bell). UI sounds,
   thunder and the organ swell on "ascend" are synthesized with WebAudio, and the **sound**
   toggle is in the nav.
-- ↑ ↑ ↓ ↓ ← → ← → B A raises the blood moon.
+- ↑ ↑ ↓ ↓ ← → ← → B A raises the blood moon, the only colour on the site.
 - The faint `?` in the footer opens "stats for nerds".
 - `prefers-reduced-motion` gets a still scene (no rain motion, no lightning flashes) and no
   motion animations. Touch devices get no custom cursor.
@@ -126,9 +150,9 @@ to the SPA so `/notes/...` links work.
 api/            Vercel functions (lastfm, github, preview, audio)
 src/content/    all copy and data, typed, with no JSX
 src/sections/   page sections (Splash, Hero, Links, NowPlaying, Projects, About, Notes, Footer)
-src/components/ Nav, GlitchHandle, MiniPlayer, SectionHeading, PixelCross, Icon, ErrorBoundary
-src/scene/      the procedural pixel-art cathedral and garden
+src/components/ ExploreTrack, Nav, GlitchHandle, MiniPlayer, SectionHeading, PixelCross, Icon…
+src/scene/      the procedural pixel-art garden, cathedral and statue sprites
 src/fx/         effects: NightScene, Cursor, JewelCase, ScrambleText, ScanReveal, Resurface, TiltCard, Marquee…
 src/hooks/      useLanyard, useVisualizer, usePauseOffscreen, useRepoStats, useKonami, useFinePointer
-src/lib/        global stores (Last.fm feed, player), lightning bus, synthesized sfx, helpers
+src/lib/        global stores (Last.fm feed, player), explore state, lightning bus, sfx, helpers
 ```

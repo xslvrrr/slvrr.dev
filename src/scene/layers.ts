@@ -6,17 +6,19 @@
  *
  *   R  stone shade × 50   1 body · 2 masonry · 3 trim · 4 bright trim
  *   G  glass kind × 32    0 none · see GLASS
- *   B  flicker seed       0–255, so each window flickers on its own
+ *   B  flicker seed       0–127, so each window flickers on its own;
+ *                         +128 marks a dimmer window
  *   A  255 = solid, 0 = empty (sky shows through)
  */
 export const SHADE = { body: 1, masonry: 2, trim: 3, bright: 4 } as const
 
+/** Glass and other lit materials. The palette is monochrome: panes are greys. */
 export const GLASS = {
   candle: 1,
-  crimson: 2,
-  sapphire: 3,
-  violet: 4,
-  emerald: 5,
+  pale: 2,
+  grey: 3,
+  dark: 4,
+  water: 5,
   lead: 6,
   flame: 7,
 } as const
@@ -67,6 +69,24 @@ export class Layer {
     for (let y = ay; y <= by; y++) {
       for (let x = Math.max(0, ax); x <= Math.min(this.w - 1, bx); x++) {
         this.set(x, y, shade, glass, seed)
+      }
+    }
+  }
+
+  /** Copies another layer in at (x, y), each of its pixels as a `scale`×`scale` block. */
+  blit(src: Layer, x: number, y: number, scale: number) {
+    for (let sy = 0; sy < src.h; sy++) {
+      for (let sx = 0; sx < src.w; sx++) {
+        const i = (sy * src.w + sx) * 4
+        if (!src.data[i + 3]) continue
+        for (let b = 0; b < scale; b++) {
+          for (let a = 0; a < scale; a++) {
+            const px = x + sx * scale + a
+            const py = y + sy * scale + b
+            if (px < 0 || py < 0 || px >= this.w || py >= this.h) continue
+            this.data.set(src.data.subarray(i, i + 4), (py * this.w + px) * 4)
+          }
+        }
       }
     }
   }
@@ -154,4 +174,25 @@ export const hashInt = (n: number) => {
   h ^= h >>> 13
   h = Math.imul(h, 0xc2b2ae35)
   return (h ^ (h >>> 16)) >>> 0
+}
+
+/**
+ * Packs a layer that may be wider than the GPU's maximum texture size into
+ * horizontal strips stacked vertically. The shader unpacks it (see `layer()`
+ * in NightScene.tsx).
+ */
+export function pack(L: Layer, maxSize: number) {
+  const stripW = Math.min(L.w, maxSize)
+  const strips = Math.ceil(L.w / stripW)
+  if (strips === 1) return { data: L.data, w: L.w, h: L.h, stripW }
+  const data = new Uint8Array(stripW * L.h * strips * 4)
+  for (let s = 0; s < strips; s++) {
+    const x0 = s * stripW
+    const n = Math.min(stripW, L.w - x0)
+    for (let y = 0; y < L.h; y++) {
+      const from = (y * L.w + x0) * 4
+      data.set(L.data.subarray(from, from + n * 4), (s * L.h + y) * stripW * 4)
+    }
+  }
+  return { data, w: stripW, h: L.h * strips, stripW }
 }

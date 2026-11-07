@@ -121,15 +121,15 @@ function Door({ side }: { side: 'left' | 'right' }) {
       style={{
         background: [
           // iron straps
-          'linear-gradient(to bottom, transparent 0 17%, #1d1a24 17% calc(17% + 12px), transparent calc(17% + 12px) 78%, #1d1a24 78% calc(78% + 12px), transparent calc(78% + 12px))',
+          'linear-gradient(to bottom, transparent 0 17%, #1c1c1f 17% calc(17% + 12px), transparent calc(17% + 12px) 78%, #1c1c1f 78% calc(78% + 12px), transparent calc(78% + 12px))',
           // rivets along the straps
-          'radial-gradient(circle at 50% 50%, #3b3548 0 2px, transparent 2.5px) 0 calc(17% + 2px) / 28px 8px repeat-x',
+          'radial-gradient(circle at 50% 50%, #3c3c40 0 2px, transparent 2.5px) 0 calc(17% + 2px) / 28px 8px repeat-x',
           // planks
-          'repeating-linear-gradient(90deg, #0b0808 0 4px, #1d1515 4px 8px, #191212 8px 52px, #0b0808 52px 56px, #1d1515 56px 60px, #151010 60px 96px)',
+          'repeating-linear-gradient(90deg, #0a0a0b 0 4px, #1d1d1f 4px 8px, #18181a 8px 52px, #0a0a0b 52px 56px, #1d1d1f 56px 60px, #141415 60px 96px)',
         ].join(','),
         boxShadow: left
-          ? 'inset -6px 0 0 #070507, inset -10px 0 0 #2a2028'
-          : 'inset 6px 0 0 #070507, inset 10px 0 0 #2a2028',
+          ? 'inset -6px 0 0 #060607, inset -10px 0 0 #28282b'
+          : 'inset 6px 0 0 #060607, inset 10px 0 0 #28282b',
       }}
       variants={{
         closed: { rotateY: 0 },
@@ -141,7 +141,7 @@ function Door({ side }: { side: 'left' | 'right' }) {
     >
       {/* ring pull */}
       <span
-        className={`absolute top-[64%] h-10 w-10 border-4 border-[#3b3548] ${left ? 'right-6' : 'left-6'}`}
+        className={`absolute top-[64%] h-10 w-10 border-4 border-[#3c3c40] ${left ? 'right-6' : 'left-6'}`}
         style={{ borderRadius: '50%' }}
       />
       {/* candlelight through the crack */}

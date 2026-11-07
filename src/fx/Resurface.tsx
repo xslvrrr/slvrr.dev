@@ -44,7 +44,7 @@ export function ResurfaceOverlay() {
     <div aria-hidden className="pointer-events-none fixed inset-0 z-[75] overflow-hidden">
       <motion.div className="absolute inset-x-0 top-0 h-[75vh]" style={{ y }}>
         {/* the line of light */}
-        <div className="h-1 bg-glass-3 shadow-[0_0_24px_4px_rgb(240_184_79/0.55)]" />
+        <div className="h-1 bg-glass-3 shadow-[0_0_24px_4px_rgb(236_236_240/0.45)]" />
         {/* the wake: a golden wash fading out, with a dithered pixel texture */}
         <div className="ascend-wake h-full" />
       </motion.div>

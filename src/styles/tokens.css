@@ -2,34 +2,35 @@
  * Design tokens: the whole look of the site lives here.
  * Change these to reskin everything (colors, type, motion).
  *
- * V2, "vespers": night outside a cathedral, in the garden, in a storm.
- * Moonlit stone, candlelight and stained glass, drawn in big crisp pixels.
+ * V2, "vespers": a night garden around a cathedral, in a storm. Monochrome:
+ * moonlit stone, bone and ink, drawn in big crisp pixels. The only colour
+ * is the Konami code's blood moon.
  */
 @theme {
   /* Surfaces: blue-black night */
-  --color-ink: #07060c; /* page background */
-  --color-ink-2: #0e0c16; /* raised surfaces */
-  --color-ink-3: #181522;
-  --color-line: rgb(214 200 255 / 0.1);
-  --color-line-strong: rgb(214 200 255 / 0.2);
+  --color-ink: #070708; /* page background */
+  --color-ink-2: #0e0e10; /* raised surfaces */
+  --color-ink-3: #18181b;
+  --color-line: rgb(236 236 240 / 0.1);
+  --color-line-strong: rgb(236 236 240 / 0.2);
 
   /* Text: bone and old parchment */
-  --color-fg: #e8e0cf;
-  --color-fg-muted: #a59db0;
-  --color-fg-faint: #5f586d;
+  --color-fg: #e9e7e2;
+  --color-fg-muted: #9d9b97;
+  --color-fg-faint: #5d5c59;
 
   /* Moonlit stone, brightest to darkest (display text, bars, frames) */
-  --color-stone-1: #f4ecd8;
-  --color-stone-2: #c3bacb;
-  --color-stone-3: #7c7491;
-  --color-stone-4: #2a2537;
+  --color-stone-1: #f3f1ec;
+  --color-stone-2: #bebcb7;
+  --color-stone-3: #74726e;
+  --color-stone-4: #2a2a2c;
 
-  /* Stained glass + candlelight accents */
-  --color-glass-1: #f0b84f; /* candle gold: the main accent */
-  --color-glass-2: #b8304a; /* crimson */
-  --color-glass-3: #ffe2a0; /* pale flame */
-  --color-glass-4: #4565b8; /* sapphire */
-  --color-live: #ffbf5c;
+  /* Accents: bone white for highlights, greys where colour used to be */
+  --color-glass-1: #f6f3ec; /* bone: the main accent */
+  --color-glass-2: #8d8b87;
+  --color-glass-3: #ffffff;
+  --color-glass-4: #55544f;
+  --color-live: #f6f3ec;
 
   /* Type: pixel blackletter for display, pixel sans for reading, tiny caps for labels */
   --font-display: 'Jacquard 24', 'UnifrakturMaguntia', serif;
@@ -60,20 +61,20 @@
     var(--color-stone-3) 62% 84%,
     var(--color-stone-2) 84%
   );
-  /* Gold leaf, for small highlighted words. */
+  /* Silver leaf, for small highlighted words. */
   --gilt-gradient: linear-gradient(
     180deg,
     var(--color-glass-3) 0 40%,
-    var(--color-glass-1) 40% 75%,
-    #9a6420 75%
+    var(--color-stone-2) 40% 75%,
+    var(--color-stone-3) 75%
   );
-  /* Stained glass panes. */
+  /* Leaded panes, in greys. */
   --glass-gradient: linear-gradient(
     115deg,
-    var(--color-glass-2) 0 25%,
-    var(--color-glass-1) 25% 50%,
+    var(--color-stone-3) 0 25%,
+    var(--color-stone-1) 25% 50%,
     var(--color-glass-4) 50% 75%,
-    #6b3f9e 75%
+    var(--color-stone-2) 75%
   );
   /* Horizontal and starts/ends on the same color, so it tiles with no seam
      (used for the animated cross / numeral shimmer: light moving through glass). */
@@ -85,7 +86,7 @@
     var(--color-glass-4),
     var(--color-glass-1)
   );
-  --panel-bg: rgb(10 9 17 / 0.86);
+  --panel-bg: rgb(10 10 12 / 0.86);
   --section-pad: clamp(5rem, 12vw, 10rem);
 }
 

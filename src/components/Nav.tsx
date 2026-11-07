@@ -1,7 +1,8 @@
 import { motion } from 'motion/react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { GlitchHandle } from '@/components/GlitchHandle'
+import { cameraX, explore } from '@/lib/explore'
 import { sfx } from '@/lib/sfx'
 import { soundStore, useStore } from '@/lib/store'
 
@@ -26,9 +27,30 @@ function useClock() {
   })
 }
 
+/** While exploring: how far along the garden path you've walked. */
+function usePathProgress() {
+  const ref = useRef<HTMLSpanElement>(null)
+  useEffect(() => {
+    const update = () => {
+      if (!ref.current) return
+      const p = explore.maxX ? cameraX() / explore.maxX : 0
+      ref.current.style.transform = `scaleX(${Math.round(p * 40) / 40})`
+    }
+    update()
+    window.addEventListener('scroll', update, { passive: true })
+    window.addEventListener('explore:layout', update)
+    return () => {
+      window.removeEventListener('scroll', update)
+      window.removeEventListener('explore:layout', update)
+    }
+  }, [])
+  return ref
+}
+
 export function Nav() {
   const time = useClock()
   const sound = useStore(soundStore)
+  const path = usePathProgress()
 
   return (
     <motion.header
@@ -44,7 +66,16 @@ export function Nav() {
       >
         <GlitchHandle />
       </Link>
-      <nav className="hidden gap-6 md:flex">
+      <nav className="relative hidden gap-6 md:flex">
+        <span
+          aria-hidden
+          className="absolute inset-x-0 -bottom-2 hidden h-0.5 bg-fg/20 explore:block"
+        />
+        <span
+          ref={path}
+          aria-hidden
+          className="absolute inset-x-0 -bottom-2 hidden h-0.5 origin-left scale-x-0 bg-fg explore:block"
+        />
         {sections.map((s) => (
           <Link
             key={s.id}

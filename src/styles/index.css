@@ -1,6 +1,13 @@
 @import 'tailwindcss';
 @import './tokens.css';
 
+/* Wide screens explore the garden sideways (keep in sync with src/lib/explore.ts). */
+@custom-variant explore {
+  @media (min-width: 1024px) and (min-height: 600px) {
+    @slot;
+  }
+}
+
 @layer base {
   html {
     color-scheme: dark;
@@ -112,7 +119,7 @@
   .panel {
     position: relative;
     border: 8px solid transparent;
-    border-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' shape-rendering='crispEdges'%3E%3Cpath fill='rgba(0,0,0,.75)' d='M2 0h8v1H2zM0 2h1v8H0zM11 2h1v8h-1zM2 11h8v1H2zM1 1h1v1H1zM10 1h1v1h-1zM1 10h1v1H1zM10 10h1v1h-1z'/%3E%3Cpath fill='%233b3452' d='M2 1h8v1H2zM1 2h1v8H1zM10 2h1v8h-1zM2 10h8v1H2z'/%3E%3Cpath fill='rgba(10,9,17,.88)' d='M2 2h8v8H2z'/%3E%3Cpath fill='%23f0b84f' d='M2 2h1v1H2zM9 2h1v1H9zM2 9h1v1H2zM9 9h1v1H9z'/%3E%3C/svg%3E")
+    border-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' shape-rendering='crispEdges'%3E%3Cpath fill='rgba(0,0,0,.75)' d='M2 0h8v1H2zM0 2h1v8H0zM11 2h1v8h-1zM2 11h8v1H2zM1 1h1v1H1zM10 1h1v1h-1zM1 10h1v1H1zM10 10h1v1h-1z'/%3E%3Cpath fill='%233a3a3e' d='M2 1h8v1H2zM1 2h1v8H1zM10 2h1v8h-1zM2 10h8v1H2z'/%3E%3Cpath fill='rgba(10,9,17,.88)' d='M2 2h8v8H2z'/%3E%3Cpath fill='%23cfccc5' d='M2 2h1v1H2zM9 2h1v1H9zM2 9h1v1H2zM9 9h1v1H9z'/%3E%3C/svg%3E")
       4 fill / 8px stretch;
   }
 
@@ -149,6 +156,19 @@
       8px 8px;
   }
 
+  /* Photos stay grey until you reach for them. */
+  .mono-img {
+    filter: grayscale(1) contrast(1.05) brightness(0.9);
+    transition: filter 0.5s steps(5);
+  }
+  :is(a, .group):hover .mono-img,
+  .mono-img:hover {
+    filter: none;
+  }
+  :root[data-mode='bloodmoon'] .mono-img {
+    filter: grayscale(1) sepia(1) hue-rotate(-50deg) saturate(3) brightness(0.7);
+  }
+
   /* Used when WebGL isn't available for the animated background. */
   .static-bg {
     background:
@@ -169,8 +189,8 @@
       repeating-conic-gradient(rgb(7 6 12 / 0.6) 0 25%, transparent 0 50%) 0 0 / 8px 8px,
       linear-gradient(
         to bottom,
-        rgb(240 184 79 / 0.55),
-        rgb(14 10 20 / 0.92) 35%,
+        rgb(236 236 240 / 0.45),
+        rgb(12 12 14 / 0.92) 35%,
         transparent
       );
   }
@@ -190,8 +210,8 @@
     animation: eq 1.2s steps(5) infinite alternate;
   }
 
-  /* Notes: the title splits into a gold/crimson offset on hover, like light
-     through two panes of glass. */
+  /* Notes: the title splits into a pale double image on hover, like a
+     reflection in old glass. */
   .chroma-hover {
     transition:
       text-shadow 0.35s var(--ease-out-expo),
@@ -199,8 +219,8 @@
   }
   .group:hover .chroma-hover {
     text-shadow:
-      -3px 0 rgb(240 184 79 / 0.75),
-      3px 0 rgb(184 48 74 / 0.7);
+      -3px 0 rgb(255 255 255 / 0.45),
+      3px 0 rgb(120 120 125 / 0.6);
   }
 
   /* Set by usePauseOffscreen: nothing animates while it can't be seen. */
@@ -239,10 +259,29 @@
     margin-inline: auto;
   }
 
+  /* While exploring, each section is a screen-tall stop along the walk, as
+     wide as its content, with its landmark standing in a gap (<Landmark/>). */
+  @media (min-width: 1024px) and (min-height: 600px) {
+    .section {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      flex-shrink: 0;
+      width: max-content;
+      max-width: none;
+      height: 100svh;
+      margin: 0;
+      padding: 5.5rem 4vw 3.5rem;
+    }
+  }
+
   .section-title {
     font-family: var(--font-display);
     font-weight: 400;
     font-size: clamp(3rem, 9vw, 7rem);
+    @media (min-width: 1024px) and (min-height: 600px) {
+      font-size: clamp(3rem, 11vh, 6.5rem);
+    }
     line-height: 0.95;
     letter-spacing: 0;
   }

@@ -103,7 +103,7 @@ export function GlitchHandle() {
         style={{
           transform: `translateX(${frame.x}px)`,
           textShadow: frame.glitching
-            ? '-2px 0 rgb(240 184 79 / 0.9), 2px 0 rgb(184 48 74 / 0.85)'
+            ? '-2px 0 rgb(255 255 255 / 0.8), 2px 0 rgb(110 110 115 / 0.9)'
             : undefined,
         }}
       >

@@ -25,11 +25,11 @@ export interface BgTheme {
   speed: number
 }
 
-// Blue-black night with violet storm clouds. Sections differ in weather more
-// than in colour, so scrolling feels like the storm moving through.
+// Monochrome night: near-black sky, charcoal storm clouds, moonlit grey edges.
+// Sections differ in weather, so walking feels like the storm moving through.
 export const bgThemes = {
   hero: {
-    sky: ['#07070f', '#12111f', '#1f1c33', '#5b5878'],
+    sky: ['#08080a', '#121214', '#1d1d21', '#58585e'],
     rain: 0.55,
     storm: 2,
     clouds: 0.55,
@@ -39,7 +39,7 @@ export const bgThemes = {
     speed: 0.5,
   },
   links: {
-    sky: ['#06070e', '#10121f', '#1c2036', '#56607e'],
+    sky: ['#07070a', '#111114', '#1c1c20', '#55555c'],
     rain: 0.75,
     storm: 3,
     clouds: 0.7,
@@ -49,7 +49,7 @@ export const bgThemes = {
     speed: 0.7,
   },
   music: {
-    sky: ['#08060f', '#151022', '#231a34', '#5e4f78'],
+    sky: ['#08080a', '#121214', '#1c1c20', '#505056'],
     rain: 0.6,
     storm: 4,
     clouds: 0.75,
@@ -59,7 +59,7 @@ export const bgThemes = {
     speed: 0.8,
   },
   work: {
-    sky: ['#05060b', '#0e111c', '#1a1f30', '#4c5671'],
+    sky: ['#060608', '#0d0d10', '#161619', '#3e3e44'],
     rain: 0.95,
     storm: 6,
     clouds: 0.9,
@@ -69,7 +69,7 @@ export const bgThemes = {
     speed: 1,
   },
   about: {
-    sky: ['#07070d', '#13121c', '#22202f', '#7a7590'],
+    sky: ['#08080a', '#131315', '#222226', '#76767c'],
     rain: 0.3,
     storm: 0.5,
     clouds: 0.35,
@@ -79,7 +79,7 @@ export const bgThemes = {
     speed: 0.3,
   },
   notes: {
-    sky: ['#06060b', '#111019', '#1d1b29', '#57536a'],
+    sky: ['#070709', '#111113', '#1d1d20', '#56565b'],
     rain: 0.45,
     storm: 1,
     clouds: 0.6,
@@ -89,7 +89,7 @@ export const bgThemes = {
     speed: 0.35,
   },
   footer: {
-    sky: ['#040409', '#0f0d1c', '#1d1932', '#6b6a96'],
+    sky: ['#050506', '#0d0d0f', '#18181b', '#4e4e55'],
     rain: 1,
     storm: 9,
     clouds: 0.95,

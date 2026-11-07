@@ -9,6 +9,8 @@ import {
 import { useEffect, useRef, useState, type RefObject } from 'react'
 import { copy } from '@/content/copy'
 import { profile } from '@/content/profile'
+import { createPortal } from 'react-dom'
+import { Landmark } from '@/components/ExploreTrack'
 import { PixelCross } from '@/components/PixelCross'
 import { Magnetic } from '@/fx/Magnetic'
 import { resurface } from '@/lib/resurface'
@@ -21,8 +23,13 @@ export function Footer() {
   const [ripples, setRipples] = useState<number[]>([])
 
   return (
-    <footer data-bg="footer" className="relative overflow-hidden border-t-2 border-line">
-      <div className="section flex flex-col gap-16 !pb-10">
+    // The calvary at the end of the walk; "ascend" goes back to the gate.
+    <footer
+      data-bg="footer"
+      data-landmark="calvary"
+      className="relative overflow-hidden border-t-2 border-line explore:flex explore:shrink-0 explore:border-t-0"
+    >
+      <div className="section flex flex-col gap-16 !pb-10 explore:w-[54vw] explore:gap-10">
         <div className="flex flex-col items-start justify-between gap-8 md:flex-row md:items-end">
           <p className="max-w-md text-lg text-fg-muted">{copy.footer.outro}</p>
           <Magnetic>
@@ -73,9 +80,14 @@ export function Footer() {
           </button>
         </div>
       </div>
-      <AnimatePresence>
-        {stats && <StatsOverlay onClose={() => setStats(false)} />}
-      </AnimatePresence>
+      <Landmark className="w-[40vw]" />
+      {/* Portalled: inside the sideways-moving track, position: fixed wouldn't stay put. */}
+      {createPortal(
+        <AnimatePresence>
+          {stats && <StatsOverlay onClose={() => setStats(false)} />}
+        </AnimatePresence>,
+        document.body,
+      )}
     </footer>
   )
 }

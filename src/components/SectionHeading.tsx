@@ -10,7 +10,7 @@ export function SectionHeading({
   title: string
 }) {
   return (
-    <div className="mb-12 flex flex-col gap-4 md:mb-20">
+    <div className="mb-12 flex flex-col gap-4 md:mb-20 explore:mb-8 explore:gap-2">
       <p className="eyebrow flex items-center gap-3">
         <span className="text-glass-1">{index}</span>
         <span className="flex gap-1" aria-hidden>

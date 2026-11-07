@@ -9,6 +9,7 @@ import { Cursor } from '@/fx/Cursor'
 import { ResurfaceOverlay } from '@/fx/Resurface'
 import { NightScene } from '@/fx/NightScene'
 import { useKonami } from '@/hooks/useKonami'
+import { scrollTargetFor } from '@/lib/explore'
 import { sfx } from '@/lib/sfx'
 import { modeStore } from '@/lib/store'
 import Home from '@/pages/Home'
@@ -33,7 +34,11 @@ export default function App() {
   }, [toast])
 
   return (
-    <ReactLenis root options={{ lerp: 0.1, anchors: true, autoRaf: true }}>
+    <ReactLenis
+      root
+      // 'both': sideways trackpad swipes walk through the garden too.
+      options={{ lerp: 0.1, autoRaf: true, gestureOrientation: 'both' }}
+    >
       <MotionConfig reducedMotion="user">
         <NightScene />
         <Cursor key={location.pathname} />
@@ -112,7 +117,9 @@ function ScrollToHash() {
     const id = requestAnimationFrame(() => {
       lenis.resize()
       const el = hash ? document.getElementById(hash.slice(1)) : null
-      if (el || immediate) lenis.scrollTo(el ?? 0, { immediate, force: true })
+      // While exploring, sections sit side by side, so aim for where the walk reaches them.
+      if (el || immediate)
+        lenis.scrollTo(el ? scrollTargetFor(el) : 0, { immediate, force: true })
     })
     return () => cancelAnimationFrame(id)
   }, [hash, lenis])

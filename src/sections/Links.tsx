@@ -8,6 +8,7 @@ import {
 import { useRef } from 'react'
 import { Icon } from '@/components/Icon'
 import { copy } from '@/content/copy'
+import { Landmark } from '@/components/ExploreTrack'
 import { SectionHeading } from '@/components/SectionHeading'
 import { links } from '@/content/links'
 import { profile } from '@/content/profile'
@@ -25,10 +26,11 @@ export function Links() {
   const mouseX = useMotionValue(Infinity)
 
   return (
-    <section id="links" data-bg="links" className="section">
+    // A herald angel: this is where my voice carries from.
+    <section id="links" data-bg="links" data-landmark="herald" className="section">
       <SectionHeading {...copy.sections.links} />
-      <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-8 lg:grid-cols-[1.4fr_1fr]">
-        <div className="flex min-w-0 flex-col gap-6">
+      <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-8 lg:grid-cols-[1.4fr_1fr] explore:flex explore:gap-0">
+        <div className="flex min-w-0 flex-col gap-6 explore:w-[40vw]">
           {/* macOS-style magnifying dock */}
           <nav
             aria-label="Social links"
@@ -65,7 +67,10 @@ export function Links() {
             ))}
           </ul>
         </div>
-        <DiscordCard />
+        <Landmark className="w-[30vw]" />
+        <div className="explore:w-[26vw]">
+          <DiscordCard />
+        </div>
       </div>
     </section>
   )
@@ -161,7 +166,7 @@ function DiscordCard() {
           <img
             src={avatarUrl(p)}
             alt=""
-            className="h-16 w-16 border-2 border-line-strong shadow-[3px_3px_0_rgb(0_0_0/0.7)]"
+            className="mono-img h-16 w-16 border-2 border-line-strong shadow-[3px_3px_0_rgb(0_0_0/0.7)]"
           />
         ) : (
           <div className="h-16 w-16 border-2 border-line-strong bg-gradient-to-br from-stone-3 from-50% to-stone-4 to-50%" />
@@ -225,7 +230,7 @@ function Activity({
   return (
     <div className="flex items-center gap-4">
       {img ? (
-        <img src={img} alt="" className="h-14 w-14 object-cover" />
+        <img src={img} alt="" className="mono-img h-14 w-14 object-cover" />
       ) : (
         <div className="h-14 w-14 bg-ink-3" />
       )}
