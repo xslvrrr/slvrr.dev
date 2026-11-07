@@ -26,13 +26,13 @@ export function Projects() {
                     {String(i + 1).padStart(2, '0')} / {p.year}
                   </span>
                   {live && (
-                    <span className="flex gap-3 font-mono text-xs text-fg-muted">
-                      <span>★ {live.stars}</span>
+                    <span className="flex gap-3 font-mono text-[10px] text-fg-muted">
+                      <span className="text-glass-1">★ {live.stars}</span>
                       {live.language && <span>{live.language}</span>}
                     </span>
                   )}
                 </div>
-                <h3 className="font-display text-3xl font-bold tracking-tight md:text-4xl">
+                <h3 className="font-display text-5xl leading-none text-stone-1 md:text-6xl">
                   {p.name}
                 </h3>
                 <p className="text-fg-muted">{p.blurb}</p>
@@ -40,7 +40,7 @@ export function Projects() {
                   {p.tags.map((t) => (
                     <li
                       key={t}
-                      className="rounded-full border border-line px-3 py-1 font-mono text-[11px] uppercase tracking-wider text-fg-muted"
+                      className="border-2 border-line bg-ink/60 px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider text-fg-muted"
                     >
                       <ScrambleText text={t} />
                     </li>

@@ -2,16 +2,16 @@
 // Draft wording: rewrite freely.
 export const copy = {
   sections: {
-    links: { index: '01', eyebrow: 'signal', title: 'Find me' },
-    music: { index: '02', eyebrow: 'frequencies', title: 'On rotation' },
-    work: { index: '03', eyebrow: 'artifacts', title: "Things I've built" },
-    about: { index: '04', eyebrow: 'whoami', title: 'slvrr / sxvrce' },
-    notes: { index: '05', eyebrow: 'transmissions', title: 'Notes' },
+    links: { index: 'I', eyebrow: 'vox', title: 'Find me' },
+    music: { index: 'II', eyebrow: 'hymnal', title: 'On rotation' },
+    work: { index: 'III', eyebrow: 'relics', title: "Things I've built" },
+    about: { index: 'IV', eyebrow: 'confessional', title: 'slvrr / sxvrce' },
+    notes: { index: 'V', eyebrow: 'epistles', title: 'Notes' },
   },
   footer: {
-    outro: "you've reached the bottom. nothing else down here… probably.",
-    backUp: 'resurface',
-    credit: 'built with react, three.js & too much chrome',
+    outro: "you've reached the churchyard. nothing else down here… probably.",
+    backUp: 'ascend',
+    credit: 'built with react, webgl & too many candles',
   },
 }
 

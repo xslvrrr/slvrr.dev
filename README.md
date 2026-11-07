@@ -1,15 +1,17 @@
 # slvrr.dev
 
-A personal landing page in the style of carrd / guns.lol, with a lot more going on: a liquid-chrome
-3D hero, a magnifying link dock, live Discord presence, Last.fm "now playing", project cards with
-holographic tilt, MDX notes and a few secrets.
+A personal landing page in the style of carrd / guns.lol, with a lot more going on. **V2
+("vespers")** is pixel-art gothic: night in the garden outside a cathedral, in a storm. A
+hand-drawn (well, code-drawn) pixel scene with rain, fog, lightning you can call down,
+candlelit stained glass, a magnifying link dock, live Discord presence, Last.fm "now playing",
+project cards with a stained-glass tilt, MDX notes and a few secrets.
 
-Built with **Vite + React + TypeScript**, **Tailwind CSS v4**, **Motion**, **react-three-fiber**,
-**Lenis** and **MDX**. Deployed on **Vercel**.
+Built with **Vite + React + TypeScript**, **Tailwind CSS v4**, **Motion**, **WebGL**, **Lenis** and
+**MDX**. Deployed on **Vercel**. (V1, the liquid-chrome version, is in the git history before the V2 redesign.)
 
 ```bash
 npm install
-npm run dev        # http://localhost:5173 (with the "tune the chrome" slider panel)
+npm run dev        # http://localhost:5173
 npm run build      # typecheck + production build
 npm run lint       # oxlint
 npm run format     # prettier
@@ -27,8 +29,8 @@ npm run format     # prettier
 | Section headings, footer lines     | `src/content/copy.ts`                            |
 | Write a note                       | add `src/content/notes/<slug>.mdx` with a `meta` |
 | Colors, fonts, radii, easing       | `src/styles/tokens.css`                          |
-| The 3D chrome look                 | `src/three/heroDefaults.ts` (see below)          |
-| Animated background per section    | `src/styles/backgroundThemes.ts`                 |
+| The cathedral and garden           | `src/scene/buildScene.ts` (see below)            |
+| Weather / sky per section          | `src/styles/backgroundThemes.ts`                 |
 | Section order                      | `src/pages/Home.tsx`                             |
 
 All copy lives in `src/content/`. The bio and section headings are drafts, so rewrite them freely.
@@ -41,31 +43,40 @@ else, add an `art` URL to the item. Existing files are kept, so delete one to re
 `swatch: '#hex'` instead to use a flat colour as the cover (like solace's pink). Items without a
 cover show a generated tile. Covers sit in 3D jewel cases (`src/fx/JewelCase.tsx`).
 
-### Finding the look
+### The night scene
 
-Run `npm run dev` and open the **tune the chrome** panel (top right). Every shape, surface,
-motion and post-processing value is a live slider. When you like what you see, press
-**copy values** and paste the JSON over the object in `src/three/heroDefaults.ts`. The panel is
-dev-only and is stripped from production builds.
+The whole page sits over one small WebGL scene (`src/fx/NightScene.tsx`), drawn as big crisp
+pixels (one scene pixel is 2–5 CSS pixels, so the screen is ~250 scene pixels tall):
 
-For a full reskin, change the tokens in `src/styles/tokens.css`. The 3D reflections read the
-`--color-iri-*` tokens too.
+- **Sky**: storm clouds posterized into four colour bands with ordered (Bayer) dithering, stars in
+  the gaps, and a moon whose light catches the cloud edges.
+- **Cathedral and garden**: drawn procedurally into two data textures by
+  `src/scene/buildScene.ts` (twin spires, rose window, a door left ajar; iron fence, lanterns,
+  gravestones, cypresses, an angel, dead trees). Pixels store _materials_, not colours (see
+  `src/scene/layers.ts`), so the shader can light them: moonlight on edges facing the moon,
+  flickering candlelit glass, lightning outlining everything.
+- **Weather**: two layers of pixel rain, ground fog, and lightning. Click the hero to call a
+  strike down (with thunder, if sound is on); the storm also strikes on its own.
+- **Scroll**: the layers slide at different speeds, so you slowly descend from the spires into
+  the churchyard. Each section has a `data-bg="<theme>"` attribute, and each theme in
+  `src/styles/backgroundThemes.ts` sets its sky colours, rain, storm (strikes per minute), cloud
+  cover, fog, candlelight and wind; the weather blends between them as you scroll.
 
-The page background is a small WebGL shader in a Balatro-style "crunchy" look: a swirling
-noise field posterized into four colour bands with ordered dithering, drawn as big crisp pixels
-under faint CRT scanlines. It morphs between themes as you scroll. Each section has a
-`data-bg="<theme>"` attribute, and each theme in `src/styles/backgroundThemes.ts` sets its four
-colours, scale, warp, speed, swirl and ribbons vs blobs. To add a theme, add an entry there and
-point a section at it. The pixel size is `PIXEL` in `src/fx/ShaderBackground.tsx`.
+To change the architecture, edit the drawing functions in `buildScene.ts`: everything is in
+"design units" (`D`) relative to the facade, so it scales to any screen. In `npm run dev`, call
+`strike()` in the console to test the lightning.
+
+Fonts: **Jacquard 24** (pixel blackletter) for display, **Pixelify Sans** for reading,
+**Silkscreen** for labels. Panels use a pixel-art nine-slice frame (`.panel` in
+`src/styles/index.css`).
 
 ### Performance budget
 
-- The hero renders at most 60 fps and a 1.5× pixel ratio. It pauses behind the splash screen
-  and once scrolled out of view, and lowers its resolution or effects if frames drop.
-- The background renders one shader pixel per 5×5 CSS pixels, at 30 fps.
+- The night scene renders one shader pixel per 2–5 CSS pixels (about 250 rows), at 30 fps, and
+  stops while the tab is hidden. The cathedral and garden are drawn once, on load and resize.
 - Avoid `backdrop-filter`, big `filter: blur()` layers and infinite `background-position`
   animations on large elements. Over an animated background they force full-screen repaints
-  every frame. The small shimmering `.text-iri` glyphs are fine.
+  every frame. The small shimmering `.text-glass` glyphs are fine.
 - Animate `transform` and `opacity` only, and only run a `requestAnimationFrame` loop while
   something is actually moving (see `ScrambleText`, `useVisualizer`). Wrap infinite CSS
   animations in an element using `usePauseOffscreen` so they stop while scrolled away.
@@ -99,13 +110,15 @@ to the SPA so `/notes/...` links work.
 
 ## Secrets & details
 
-- The splash screen's click unlocks audio. UI sounds are synthesized with WebAudio, and the
-  **sound** toggle is in the nav.
-- ↑ ↑ ↓ ↓ ← → ← → B A switches to mercury mode.
+- The splash screen's doors open with a click, which unlocks audio (a church bell). UI sounds,
+  thunder and the organ swell on "ascend" are synthesized with WebAudio, and the **sound**
+  toggle is in the nav.
+- ↑ ↑ ↓ ↓ ← → ← → B A raises the blood moon.
 - The faint `?` in the footer opens "stats for nerds".
-- `prefers-reduced-motion` gets a still 3D frame and no motion animations. Touch devices get a
-  lighter scene and no custom cursor.
-- `npm run og` re-renders the social preview (`public/og.png`) from `scripts/og.html`.
+- `prefers-reduced-motion` gets a still scene (no rain motion, no lightning flashes) and no
+  motion animations. Touch devices get no custom cursor.
+- `npm run og` re-renders the social preview (`public/og.png`) by screenshotting the hero. Run
+  `npm run build && npm run preview` first (it expects the site on port 4173).
 
 ## Layout
 
@@ -113,9 +126,9 @@ to the SPA so `/notes/...` links work.
 api/            Vercel functions (lastfm, github, preview, audio)
 src/content/    all copy and data, typed, with no JSX
 src/sections/   page sections (Splash, Hero, Links, NowPlaying, Projects, About, Notes, Footer)
-src/components/ Nav, GlitchHandle, MiniPlayer, SectionHeading, Icon, ErrorBoundary
-src/three/      the chrome blob: shader material, studio lighting, scene, dev tuner
-src/fx/         effects: Cursor, JewelCase, ScrambleText, ScanReveal, Resurface, TiltCard, Marquee, ShaderBackground…
+src/components/ Nav, GlitchHandle, MiniPlayer, SectionHeading, PixelCross, Icon, ErrorBoundary
+src/scene/      the procedural pixel-art cathedral and garden
+src/fx/         effects: NightScene, Cursor, JewelCase, ScrambleText, ScanReveal, Resurface, TiltCard, Marquee…
 src/hooks/      useLanyard, useVisualizer, usePauseOffscreen, useRepoStats, useKonami, useFinePointer
-src/lib/        global stores (Last.fm feed, player), synthesized sfx, helpers
+src/lib/        global stores (Last.fm feed, player), lightning bus, synthesized sfx, helpers
 ```

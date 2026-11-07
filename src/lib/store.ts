@@ -17,9 +17,10 @@ export function createStore<T>(initial: T) {
   }
 }
 
-export type Mode = 'chrome' | 'mercury'
+/** 'bloodmoon' is the Konami code's secret mode. */
+export type Mode = 'night' | 'bloodmoon'
 
-export const modeStore = createStore<Mode>('chrome')
+export const modeStore = createStore<Mode>('night')
 export const soundStore = createStore<boolean>(readSound())
 /** Whether the splash gate has been passed (remembered for the browser session). */
 export const enteredStore = createStore<boolean>(readEntered())
@@ -44,6 +45,8 @@ soundStore.subscribe(() => {
 
 function readEntered() {
   try {
+    // `?og` skips the splash, for rendering the social preview (npm run og).
+    if (new URLSearchParams(location.search).has('og')) return true
     return sessionStorage.getItem('slvrr:entered') === '1'
   } catch {
     return false

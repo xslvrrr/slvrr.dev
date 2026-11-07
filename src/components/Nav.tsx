@@ -32,12 +32,16 @@ export function Nav() {
 
   return (
     <motion.header
-      className="fixed inset-x-0 top-0 z-50 flex items-center justify-between gap-4 px-4 py-4 font-mono text-xs text-fg-muted mix-blend-difference md:px-8"
+      className="fixed inset-x-0 top-0 z-50 flex items-center justify-between gap-4 px-4 py-4 font-mono text-[10px] text-fg-muted mix-blend-difference md:px-8"
       initial={{ y: -40, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ delay: 0.4, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
     >
-      <Link to="/" className="font-semibold text-fg" onMouseEnter={sfx.tick}>
+      <Link
+        to="/"
+        className="font-display text-2xl leading-none text-fg"
+        onMouseEnter={sfx.tick}
+      >
         <GlitchHandle />
       </Link>
       <nav className="hidden gap-6 md:flex">

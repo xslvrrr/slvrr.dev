@@ -45,7 +45,7 @@ export function MiniPlayer() {
           key="mini"
           role="region"
           aria-label="Listen along player"
-          className="panel fixed bottom-4 left-1/2 z-[65] flex !bg-ink-2/95 w-[min(92vw,26rem)] -translate-x-1/2 items-center gap-3 overflow-hidden !rounded-2xl p-2 pr-3"
+          className="panel fixed bottom-4 left-1/2 z-[65] flex w-[min(92vw,26rem)] -translate-x-1/2 items-center gap-3 overflow-hidden p-1 pr-2"
           initial={{ y: 120, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 120, opacity: 0 }}
@@ -55,7 +55,7 @@ export function MiniPlayer() {
             href={track.link || undefined}
             target="_blank"
             rel="noreferrer"
-            className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-ink-3"
+            className="relative h-12 w-12 shrink-0 overflow-hidden bg-ink-3"
             data-cursor="open"
           >
             {track.cover && (
@@ -79,7 +79,7 @@ export function MiniPlayer() {
             <p className="truncate text-xs text-fg-muted">{track.artist}</p>
             <p className="mt-0.5 flex items-center gap-1.5 truncate font-mono text-[10px] uppercase tracking-widest text-fg-faint">
               <span
-                className={`h-1.5 w-1.5 shrink-0 rounded-full ${live ? 'bg-live animate-pulse' : 'bg-fg-faint'}`}
+                className={`h-1.5 w-1.5 shrink-0 ${live ? 'bg-live animate-pulse' : 'bg-fg-faint'}`}
               />
               {live
                 ? `listening with ${profile.name} · live`
@@ -92,7 +92,7 @@ export function MiniPlayer() {
               <span
                 key={i}
                 data-bar
-                className="h-full w-[3px] origin-bottom scale-y-[0.08] rounded-full bg-iri-1"
+                className="h-full w-[3px] origin-bottom scale-y-[0.08] bg-glass-1"
               />
             ))}
           </span>
@@ -102,10 +102,10 @@ export function MiniPlayer() {
             onClick={togglePlay}
             aria-label={playing ? 'Pause' : 'Play'}
             data-cursor={playing ? 'pause' : 'play'}
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-fg text-ink transition-transform hover:scale-105"
+            className="grid h-9 w-9 shrink-0 place-items-center bg-glass-1 text-ink shadow-[2px_2px_0_rgb(0_0_0/0.7)] transition-transform hover:scale-105"
           >
             {status === 'loading' ? (
-              <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent" />
+              <span className="h-3 w-3 animate-spin border-2 border-ink border-t-transparent" />
             ) : playing ? (
               <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
                 <path d="M6 5h4v14H6zm8 0h4v14h-4z" />
@@ -120,7 +120,7 @@ export function MiniPlayer() {
             type="button"
             onClick={stopListening}
             aria-label="Stop listening"
-            className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-fg-faint hover:text-fg"
+            className="grid h-7 w-7 shrink-0 place-items-center text-fg-faint hover:text-fg"
           >
             ✕
           </button>
@@ -128,7 +128,7 @@ export function MiniPlayer() {
           <span
             ref={bar}
             aria-hidden
-            className="absolute inset-x-0 bottom-0 h-[2px] origin-left scale-x-0 bg-iri-1 transition-transform duration-300 ease-linear"
+            className="absolute inset-x-0 bottom-0 h-[2px] origin-left scale-x-0 bg-glass-1 transition-transform duration-300 ease-linear"
           />
         </motion.div>
       )}

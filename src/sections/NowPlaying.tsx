@@ -37,8 +37,7 @@ export function NowPlaying() {
             <p className="eyebrow flex items-center gap-2">
               {live ? (
                 <>
-                  <span className="h-2 w-2 animate-pulse rounded-full bg-live" /> now
-                  playing
+                  <span className="h-2 w-2 animate-pulse bg-live" /> now playing
                 </>
               ) : np ? (
                 `last played ${timeAgo(np.playedAt)}`
@@ -54,7 +53,7 @@ export function NowPlaying() {
                 className="group"
                 data-cursor="open"
               >
-                <p className="font-display text-2xl font-bold leading-tight group-hover:underline md:text-3xl">
+                <p className="font-display text-4xl leading-none group-hover:text-glass-3 md:text-5xl">
                   {np.track}
                 </p>
                 <p className="text-fg-muted">{np.artist}</p>
@@ -62,7 +61,7 @@ export function NowPlaying() {
               </a>
             ) : (
               <div>
-                <p className="font-display text-2xl font-bold leading-tight md:text-3xl">
+                <p className="font-display text-4xl leading-none md:text-5xl">
                   silence, for now
                 </p>
                 <p className="text-sm text-fg-faint">
@@ -99,7 +98,7 @@ export function NowPlaying() {
 function ListenAlong({ disabled }: { disabled: boolean }) {
   const { status } = useStore(playerStore)
   const base =
-    'inline-flex items-center gap-2 rounded-full border px-4 py-2 font-mono text-[11px] uppercase tracking-widest transition-colors'
+    'pixel-btn inline-flex items-center gap-2 px-4 py-2 font-mono text-[10px] uppercase tracking-widest'
 
   if (status === 'idle') {
     return (
@@ -112,7 +111,7 @@ function ListenAlong({ disabled }: { disabled: boolean }) {
             void listenAlong()
           }}
           data-cursor="listen"
-          className={`${base} border-line-strong hover:border-iri-1 hover:text-iri-1 disabled:opacity-40`}
+          className={`${base} border-line-strong hover:border-glass-1 hover:text-glass-1 disabled:opacity-40`}
         >
           <svg viewBox="0 0 24 24" className="h-3 w-3" fill="currentColor" aria-hidden>
             <path d="M7 4.5v15l13-7.5z" />
@@ -131,7 +130,7 @@ function ListenAlong({ disabled }: { disabled: boolean }) {
       <button
         type="button"
         onClick={togglePlay}
-        className={`${base} border-iri-1/60 text-iri-1`}
+        className={`${base} border-glass-1/60 text-glass-1`}
       >
         {status === 'loading'
           ? 'tuning in…'
@@ -169,7 +168,7 @@ function Vinyl({ art, spinning }: { art: string | null; spinning: boolean }) {
           className="absolute inset-0 rounded-full opacity-40"
           style={{
             background:
-              'conic-gradient(from 0deg, transparent 0 10%, rgb(255 255 255 / 0.25) 15%, transparent 22% 60%, rgb(191 238 255 / 0.25) 65%, transparent 72%)',
+              'conic-gradient(from 0deg, transparent 0 10%, rgb(255 240 210 / 0.2) 10% 15%, transparent 15% 60%, rgb(240 184 79 / 0.2) 60% 65%, transparent 65%)',
           }}
         />
         <div className="absolute inset-[30%] overflow-hidden rounded-full border-4 border-ink">
@@ -178,7 +177,7 @@ function Vinyl({ art, spinning }: { art: string | null; spinning: boolean }) {
           ) : (
             <div
               className="h-full w-full"
-              style={{ background: 'var(--iri-gradient)' }}
+              style={{ background: 'var(--glass-gradient)' }}
             />
           )}
         </div>
@@ -203,7 +202,7 @@ function Bars({ live, listening }: { live: boolean; listening: boolean }) {
         <span
           key={i}
           data-bar
-          className={`h-full w-1.5 origin-bottom rounded-full bg-gradient-to-t from-chrome-3 to-chrome-1 transition-transform duration-500 ${idle ? 'eq-bar' : ''}`}
+          className={`h-full w-1.5 origin-bottom bg-gradient-to-t from-glass-2 from-45% to-glass-1 to-45% transition-transform duration-500 ${idle ? 'eq-bar' : ''}`}
           style={{
             transform: idle || listening ? undefined : 'scaleY(0.12)',
             animationDuration: `${0.9 + (i % 5) * 0.17}s`,
@@ -223,7 +222,7 @@ function hash(s: string) {
 
 function Cover({ item }: { item: MediaItem }) {
   const [broken, setBroken] = useState(false)
-  // Fallback tile in the site's cold palette (only if the cover file is missing).
+  // Fallback tile in the site's night palette (only if the cover file is missing).
   const light = 40 + (hash(item.title + item.by) % 30)
 
   const art = item.swatch ? (
@@ -232,7 +231,7 @@ function Cover({ item }: { item: MediaItem }) {
     <div
       className="h-full w-full"
       style={{
-        background: `radial-gradient(circle at 30% 25%, hsl(200 60% ${light + 30}% / 0.5), transparent 55%), linear-gradient(135deg, hsl(210 20% ${light / 2}%), hsl(220 25% 6%))`,
+        background: `radial-gradient(circle at 30% 25%, hsl(38 70% ${light + 20}% / 0.45), transparent 55%), linear-gradient(135deg, hsl(265 20% ${light / 2}%), hsl(250 25% 6%))`,
       }}
     />
   ) : (
@@ -253,7 +252,7 @@ function Cover({ item }: { item: MediaItem }) {
       <JewelCase>{art}</JewelCase>
       <div className="mt-4 min-w-0">
         <p className="eyebrow !text-[9px]">{item.kind}</p>
-        <p className="truncate text-sm font-semibold">{item.title}</p>
+        <p className="truncate text-sm font-semibold text-fg">{item.title}</p>
         <p className="truncate text-xs text-fg-muted">{item.by}</p>
       </div>
     </>

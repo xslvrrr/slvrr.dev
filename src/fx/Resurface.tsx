@@ -7,9 +7,9 @@ import { sfx } from '@/lib/sfx'
 const DURATION = 1.3
 
 /**
- * Full-screen overlay for the resurface transition: an ice waterline with a
- * dithered wake rises from the bottom of the screen while the page scrolls to
- * the top underneath it. Mounted once in App; renders nothing when idle.
+ * Full-screen overlay for the "ascend" transition: a line of candlelight with
+ * a dithered golden wake rises from the bottom of the screen while the page
+ * scrolls to the top underneath it. Mounted once in App; renders nothing when idle.
  */
 export function ResurfaceOverlay() {
   const lenis = useLenis()
@@ -43,10 +43,10 @@ export function ResurfaceOverlay() {
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0 z-[75] overflow-hidden">
       <motion.div className="absolute inset-x-0 top-0 h-[75vh]" style={{ y }}>
-        {/* the waterline */}
-        <div className="h-[2px] bg-iri-3 shadow-[0_0_24px_4px_rgb(191_238_255/0.55)]" />
-        {/* the wake: a cold wash fading out, with a dithered pixel texture */}
-        <div className="resurface-wake h-full" />
+        {/* the line of light */}
+        <div className="h-1 bg-glass-3 shadow-[0_0_24px_4px_rgb(240_184_79/0.55)]" />
+        {/* the wake: a golden wash fading out, with a dithered pixel texture */}
+        <div className="ascend-wake h-full" />
       </motion.div>
     </div>
   )

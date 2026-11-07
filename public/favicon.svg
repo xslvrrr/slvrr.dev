@@ -1,20 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <defs>
-    <linearGradient id="c" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#fff"/>
-      <stop offset=".36" stop-color="#c9ced8"/>
-      <stop offset=".49" stop-color="#7d8391"/>
-      <stop offset=".5" stop-color="#2c2f37"/>
-      <stop offset=".53" stop-color="#c9ced8"/>
-      <stop offset=".72" stop-color="#fff"/>
-      <stop offset="1" stop-color="#7d8391"/>
-    </linearGradient>
-    <radialGradient id="g" cx=".3" cy=".25" r=".9">
-      <stop offset="0" stop-color="#c7a4ff" stop-opacity=".35"/>
-      <stop offset="1" stop-color="#07070a" stop-opacity="0"/>
-    </radialGradient>
-  </defs>
-  <rect width="64" height="64" rx="16" fill="#07070a"/>
-  <rect width="64" height="64" rx="16" fill="url(#g)"/>
-  <text x="32" y="46" text-anchor="middle" font-family="Arial Black, Helvetica, sans-serif" font-weight="900" font-size="42" fill="url(#c)">S</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges">
+  <rect width="16" height="16" fill="#07060c"/>
+  <path fill="#2a2537" d="M1 15V7h1V5h1V3h1v2h1v2h1V5h1V3h1V1h1v2h1v2h1v2h1V5h1V3h1v2h1v2h1v8z"/>
+  <path fill="#f0b84f" d="M7 4h2v10H7zM5 6h6v2H5z"/>
+  <path fill="#ffe2a0" d="M7 4h1v4H7z"/>
+  <path fill="#b8304a" d="M7 6h2v2H7z"/>
 </svg>

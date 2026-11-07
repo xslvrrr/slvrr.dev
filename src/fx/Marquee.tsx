@@ -10,10 +10,12 @@ import {
   wrap,
 } from 'motion/react'
 import { useRef } from 'react'
+import { PixelCross } from '@/components/PixelCross'
 import { usePauseOffscreen } from '@/hooks/usePauseOffscreen'
 
 /**
  * Endless ticker that speeds up, reverses and skews with scroll velocity.
+ * The crosses between words shimmer like candlelit glass.
  */
 export function Marquee({ items, speed = 3 }: { items: string[]; speed?: number }) {
   const base = useMotionValue(0)
@@ -41,7 +43,7 @@ export function Marquee({ items, speed = 3 }: { items: string[]; speed?: number 
       {items.map((item, i) => (
         <span key={i} className="flex items-center gap-8 pr-8">
           <span>{item}</span>
-          <span className="text-iri">✦</span>
+          <PixelCross className="h-[0.42em] w-[0.3em] text-glass-1" />
         </span>
       ))}
     </span>
@@ -50,11 +52,11 @@ export function Marquee({ items, speed = 3 }: { items: string[]; speed?: number 
   return (
     <div
       ref={ref}
-      className="relative overflow-hidden border-y border-line py-5"
+      className="relative overflow-hidden border-y-2 border-line bg-ink/70 py-4"
       aria-hidden
     >
       <motion.div
-        className="flex w-max whitespace-nowrap py-[0.1em] font-display text-4xl font-bold uppercase leading-[1.25] tracking-tight text-chrome md:text-6xl"
+        className="flex w-max whitespace-nowrap py-[0.1em] font-display text-5xl leading-[1.25] text-stone md:text-7xl"
         style={{ x, skewX: skew }}
       >
         {row}

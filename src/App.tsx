@@ -4,9 +4,10 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Route, Routes, useLocation } from 'react-router'
 import { MiniPlayer } from '@/components/MiniPlayer'
 import { Nav } from '@/components/Nav'
+import { PixelCross } from '@/components/PixelCross'
 import { Cursor } from '@/fx/Cursor'
 import { ResurfaceOverlay } from '@/fx/Resurface'
-import { ShaderBackground } from '@/fx/ShaderBackground'
+import { NightScene } from '@/fx/NightScene'
 import { useKonami } from '@/hooks/useKonami'
 import { sfx } from '@/lib/sfx'
 import { modeStore } from '@/lib/store'
@@ -18,10 +19,10 @@ export default function App() {
   const [toast, setToast] = useState<string | null>(null)
 
   const unlock = useCallback(() => {
-    const next = modeStore.get() === 'chrome' ? 'mercury' : 'chrome'
+    const next = modeStore.get() === 'night' ? 'bloodmoon' : 'night'
     modeStore.set(next)
     sfx.unlock()
-    setToast(next === 'mercury' ? 'mercury mode unlocked ✦' : 'back to chrome')
+    setToast(next === 'bloodmoon' ? 'the blood moon rises' : 'the moon pales again')
   }, [])
   useKonami(unlock)
 
@@ -34,7 +35,7 @@ export default function App() {
   return (
     <ReactLenis root options={{ lerp: 0.1, anchors: true, autoRaf: true }}>
       <MotionConfig reducedMotion="user">
-        <ShaderBackground />
+        <NightScene />
         <Cursor key={location.pathname} />
         <Nav />
         <AnimatePresence mode="wait">
@@ -56,7 +57,10 @@ export default function App() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 30 }}
             >
-              <span className="text-iri">{toast}</span>
+              <span className="flex items-center gap-3 text-glass-1">
+                <PixelCross />
+                {toast}
+              </span>
             </motion.div>
           )}
         </AnimatePresence>
@@ -67,27 +71,28 @@ export default function App() {
   )
 }
 
-/** A chrome panel that sweeps across the screen between routes. */
+/** Ease in-out, snapped to 14 steps so the motion reads as pixel animation. */
+const stepped = (t: number) => {
+  const e = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
+  return Math.round(e * 14) / 14
+}
+
+/** A dark shroud with dithered edges that falls between routes, then lifts. */
 function PageWipe() {
   return (
     <motion.div
       aria-hidden
-      className="pointer-events-none fixed inset-0 z-[70] origin-bottom"
-      style={{ background: 'var(--chrome-gradient)' }}
+      className="pointer-events-none fixed inset-x-0 -top-4 z-[70] grid h-[calc(100vh+2rem)] place-items-center bg-ink"
       variants={{
-        enter: { scaleY: 1, originY: 0 },
-        idle: {
-          scaleY: 0,
-          originY: 0,
-          transition: { duration: 0.7, ease: [0.76, 0, 0.24, 1] },
-        },
-        leave: {
-          scaleY: 1,
-          originY: 1,
-          transition: { duration: 0.5, ease: [0.76, 0, 0.24, 1] },
-        },
+        enter: { y: '0%' },
+        idle: { y: '-110%', transition: { duration: 0.7, ease: stepped } },
+        leave: { y: '0%', transition: { duration: 0.5, ease: stepped } },
       }}
-    />
+    >
+      <span className="dither-edge absolute inset-x-0 -bottom-4 h-4" />
+      <span className="dither-edge absolute inset-x-0 -top-4 h-4" />
+      <PixelCross className="h-14 w-10 text-glass-1" />
+    </motion.div>
   )
 }
 

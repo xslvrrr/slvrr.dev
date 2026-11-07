@@ -6,8 +6,8 @@ export const projects: Project[] = [
     name: 'slvrr.dev',
     repo: 'xslvrrr/slvrr.dev',
     blurb:
-      'This place. Liquid chrome, crunchy shaders and more effects than anyone asked for.',
-    tags: ['React', 'Three.js', 'GLSL'],
+      'This place. Rain, stained glass, a hand-drawn storm and more effects than anyone asked for.',
+    tags: ['React', 'WebGL', 'GLSL'],
     year: '2026',
   },
   {

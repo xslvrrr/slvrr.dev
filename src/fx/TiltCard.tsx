@@ -8,8 +8,8 @@ import {
 import type { ReactNode } from 'react'
 
 /**
- * 3D tilt toward the cursor with a holographic foil sheen that tracks it,
- * like a rare trading card.
+ * 3D tilt toward the cursor with a stained-glass sheen that tracks it, like
+ * candlelight moving behind coloured panes.
  */
 export function TiltCard({
   children,
@@ -33,7 +33,7 @@ export function TiltCard({
   const fx = useTransform(sx, (v) => `${clamp01(v) * 100}%`)
   const fy = useTransform(sy, (v) => `${clamp01(v) * 100}%`)
   const foilPos = useMotionTemplate`${fx} ${fy}`
-  const glare = useMotionTemplate`radial-gradient(circle at ${gx} ${gy}, rgb(220 240 255 / 0.14), transparent 40%)`
+  const glare = useMotionTemplate`radial-gradient(circle at ${gx} ${gy}, rgb(255 226 160 / 0.12), transparent 40%)`
   // The foil only shows in a soft spot around the cursor, so it never has an edge.
   const foilMask = useMotionTemplate`radial-gradient(circle at ${gx} ${gy}, #000 0%, transparent 65%)`
   const hover = useMotionValue(0)
@@ -62,7 +62,7 @@ export function TiltCard({
           className="pointer-events-none absolute inset-0 mix-blend-screen"
           style={{
             opacity: foilAlpha,
-            backgroundImage: 'var(--iri-gradient)',
+            backgroundImage: 'var(--glass-gradient)',
             backgroundSize: '300% 300%',
             backgroundRepeat: 'no-repeat',
             backgroundPosition: foilPos,

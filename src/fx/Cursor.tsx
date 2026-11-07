@@ -1,10 +1,11 @@
 import { motion, useMotionValue, useSpring } from 'motion/react'
 import { useEffect, useState } from 'react'
+import { PixelCross } from '@/components/PixelCross'
 import { useFinePointer } from '@/hooks/useFinePointer'
 
 /**
- * Custom cursor: a crisp dot plus a springy trailing ring that swells over
- * anything interactive. Add `data-cursor="label"` to show a word inside it.
+ * Custom cursor: a tiny pixel cross plus a springy trailing square that swells
+ * over anything interactive. Add `data-cursor="label"` to show a word inside it.
  */
 export function Cursor() {
   const fine = useFinePointer()
@@ -51,7 +52,7 @@ export function Cursor() {
       className="pointer-events-none fixed inset-0 z-[100] mix-blend-difference"
     >
       <motion.div
-        className="absolute left-0 top-0 grid place-items-center rounded-full border border-white/80"
+        className="absolute left-0 top-0 grid place-items-center border-2 border-white/80"
         style={{ x: rx, y: ry, translateX: '-50%', translateY: '-50%' }}
         animate={{
           width: size,
@@ -63,16 +64,18 @@ export function Cursor() {
         transition={{ type: 'spring', stiffness: 400, damping: 28 }}
       >
         {hover ? (
-          <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-black">
+          <span className="font-mono text-[9px] uppercase tracking-wider text-black">
             {hover}
           </span>
         ) : null}
       </motion.div>
       <motion.div
-        className="absolute left-0 top-0 h-1.5 w-1.5 rounded-full bg-white"
+        className="absolute left-0 top-0 text-white"
         style={{ x, y, translateX: '-50%', translateY: '-50%' }}
         animate={{ opacity: visible && hover === null ? 1 : 0 }}
-      />
+      >
+        <PixelCross className="h-[14px] w-[10px]" />
+      </motion.div>
     </div>
   )
 }

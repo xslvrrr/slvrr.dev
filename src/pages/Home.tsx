@@ -27,7 +27,7 @@ export default function Home() {
         <Safe>
           <NowPlaying />
         </Safe>
-        <Marquee items={['music', 'code', 'games', 'chrome', 'noise']} speed={2} />
+        <Marquee items={['music', 'code', 'games', 'vespers', 'noise']} speed={2} />
         <Safe>
           <Projects />
         </Safe>

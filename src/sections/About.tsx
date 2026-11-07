@@ -35,7 +35,7 @@ export function About() {
                 as="p"
                 text={para}
                 duration={1200}
-                className="font-display text-2xl font-medium leading-snug md:text-3xl"
+                className="text-2xl font-medium leading-snug text-fg md:text-3xl"
               />
             ) : (
               <TextReveal
@@ -52,7 +52,7 @@ export function About() {
           <motion.span
             aria-hidden
             className="absolute bottom-0 left-[7px] top-2 w-px origin-top"
-            style={{ scaleY, background: 'var(--iri-gradient)' }}
+            style={{ scaleY, background: 'var(--glass-gradient)' }}
           />
           {timeline.map((t, i) => (
             <TimelineItem
@@ -82,7 +82,7 @@ function TimelineItem({
   const lit = useTransform(progress, [Math.max(0, at * 0.95 - 0.05), at * 0.95], [0, 1])
   const glow = useTransform(
     lit,
-    (v) => `0 0 ${v * 14}px ${v * 3}px rgb(191 238 255 / ${v * 0.6})`,
+    (v) => `0 0 ${v * 14}px ${v * 3}px rgb(240 184 79 / ${v * 0.6})`,
   )
 
   return (
@@ -93,15 +93,15 @@ function TimelineItem({
       viewport={{ once: true, margin: '0px 0px -20% 0px' }}
       transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
     >
-      <span className="absolute -left-10 top-1.5 h-[15px] w-[15px] rounded-full border border-line-strong bg-ink">
-        <span className="absolute inset-[4px] rounded-full bg-chrome-3" />
+      <span className="absolute -left-10 top-1.5 h-[15px] w-[15px] rotate-45 border-2 border-line-strong bg-ink">
+        <span className="absolute inset-[3px] bg-stone-4" />
         <motion.span
-          className="absolute inset-[4px] rounded-full bg-iri-3"
+          className="absolute inset-[3px] bg-glass-1"
           style={{ opacity: lit, boxShadow: glow }}
         />
       </span>
-      <p className="font-mono text-xs text-fg-faint">{entry.when}</p>
-      <p className="mt-1 font-display text-xl font-semibold">{entry.title}</p>
+      <p className="font-mono text-[10px] text-glass-1/80">{entry.when}</p>
+      <p className="mt-1 font-display text-3xl leading-tight">{entry.title}</p>
       <p className="mt-1 text-fg-muted">{entry.body}</p>
     </motion.li>
   )
