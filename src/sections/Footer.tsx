@@ -9,6 +9,9 @@ import {
 import { useEffect, useRef, useState, type RefObject } from 'react'
 import { copy } from '@/content/copy'
 import { profile } from '@/content/profile'
+import { createPortal } from 'react-dom'
+import { Landmark } from '@/components/ExploreTrack'
+import { PixelCross } from '@/components/PixelCross'
 import { Magnetic } from '@/fx/Magnetic'
 import { resurface } from '@/lib/resurface'
 import { modeStore, useStore } from '@/lib/store'
@@ -20,8 +23,13 @@ export function Footer() {
   const [ripples, setRipples] = useState<number[]>([])
 
   return (
-    <footer data-bg="footer" className="relative overflow-hidden border-t border-line">
-      <div className="section flex flex-col gap-16 !pb-10">
+    // The calvary at the end of the walk; "ascend" goes back to the gate.
+    <footer
+      data-bg="footer"
+      data-landmark="calvary"
+      className="relative overflow-hidden border-t-2 border-line explore:flex explore:shrink-0 explore:border-t-0"
+    >
+      <div className="section flex flex-col gap-16 !pb-10 explore:w-[54vw] explore:gap-10">
         <div className="flex flex-col items-start justify-between gap-8 md:flex-row md:items-end">
           <p className="max-w-md text-lg text-fg-muted">{copy.footer.outro}</p>
           <Magnetic>
@@ -33,15 +41,16 @@ export function Footer() {
                 setRipples((r) => [...r, Date.now()])
                 resurface()
               }}
-              className="relative grid h-28 w-28 place-items-center rounded-full border border-line-strong font-mono text-xs uppercase tracking-widest transition-colors hover:bg-fg hover:text-ink"
+              className="pixel-btn relative flex h-32 w-24 flex-col items-center justify-center gap-3 font-mono text-[10px] uppercase tracking-widest hover:!bg-glass-1 hover:!text-ink [clip-path:polygon(0_30%,15%_15%,30%_6%,50%_0,70%_6%,85%_15%,100%_30%,100%_100%,0_100%)]"
             >
+              <PixelCross className="h-5 w-3.5" />
               {copy.footer.backUp}
               <AnimatePresence>
                 {ripples.map((id) => (
                   <motion.span
                     key={id}
                     aria-hidden
-                    className="pointer-events-none absolute inset-0 rounded-full border border-iri-1"
+                    className="pointer-events-none absolute inset-0 border-2 border-glass-1"
                     initial={{ scale: 1, opacity: 0.9 }}
                     animate={{ scale: 2.6, opacity: 0 }}
                     transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
@@ -63,7 +72,7 @@ export function Footer() {
           <button
             type="button"
             onClick={() => setStats((v) => !v)}
-            className="h-6 w-6 rounded-full border border-line opacity-30 hover:opacity-100"
+            className="h-6 w-6 border-2 border-line opacity-30 hover:opacity-100"
             aria-label="Toggle stats"
             data-cursor="?"
           >
@@ -71,15 +80,20 @@ export function Footer() {
           </button>
         </div>
       </div>
-      <AnimatePresence>
-        {stats && <StatsOverlay onClose={() => setStats(false)} />}
-      </AnimatePresence>
+      <Landmark className="w-[40vw]" />
+      {/* Portalled: inside the sideways-moving track, position: fixed wouldn't stay put. */}
+      {createPortal(
+        <AnimatePresence>
+          {stats && <StatsOverlay onClose={() => setStats(false)} />}
+        </AnimatePresence>,
+        document.body,
+      )}
     </footer>
   )
 }
 
 /**
- * The big chrome wordmark. Sized in container units (cqw) so it always fits its
+ * The big stone wordmark. Sized in container units (cqw) so it always fits its
  * column (vw overflowed on wide laptops, where the column is capped), and the
  * letters ripple upward as the cursor passes over them.
  */
@@ -115,7 +129,7 @@ function WaveWord({ word }: { word: string }) {
       }}
       onPointerLeave={() => mouseX.set(-1e5)}
     >
-      <p className="-my-[0.1em] flex justify-center py-[0.1em] font-display text-[24cqw] font-black uppercase leading-none tracking-tighter">
+      <p className="-my-[0.1em] flex justify-center py-[0.1em] font-display text-[28cqw] leading-none [filter:drop-shadow(0.03em_0.03em_0_rgb(0_0_0/0.85))]">
         {[...word].map((ch, i) => (
           <WaveLetter
             key={i}
@@ -156,7 +170,7 @@ function WaveLetter({
   return (
     <motion.span
       data-letter
-      className="text-chrome inline-block origin-bottom"
+      className="text-stone inline-block origin-bottom"
       style={{ y, scaleY }}
     >
       {ch}
@@ -195,7 +209,7 @@ function StatsOverlay({ onClose }: { onClose: () => void }) {
       `${window.innerWidth}×${window.innerHeight} @${window.devicePixelRatio}x`,
     ],
     ['mode', mode],
-    ['secret', mode === 'mercury' ? 'unlocked ✦' : '↑↑↓↓←→←→ b a'],
+    ['secret', mode === 'bloodmoon' ? 'the moon is red' : '↑↑↓↓←→←→ b a'],
   ]
   return (
     <motion.div

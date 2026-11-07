@@ -1,83 +1,103 @@
 /*
  * Design tokens: the whole look of the site lives here.
  * Change these to reskin everything (colors, type, motion).
+ *
+ * V2, "vespers": a night garden around a cathedral, in a storm. Monochrome:
+ * moonlit stone, bone and ink, drawn in big crisp pixels. The only colour
+ * is the Konami code's blood moon.
  */
 @theme {
-  /* Surfaces */
-  --color-ink: #040507; /* page background */
-  --color-ink-2: #0a0c10; /* raised surfaces */
-  --color-ink-3: #12151b;
-  --color-line: rgb(200 225 255 / 0.08);
-  --color-line-strong: rgb(200 225 255 / 0.16);
+  /* Surfaces: blue-black night */
+  --color-ink: #070708; /* page background */
+  --color-ink-2: #0e0e10; /* raised surfaces */
+  --color-ink-3: #18181b;
+  --color-line: rgb(236 236 240 / 0.1);
+  --color-line-strong: rgb(236 236 240 / 0.2);
 
-  /* Text */
-  --color-fg: #e4e9ef;
-  --color-fg-muted: #8b94a1;
-  --color-fg-faint: #4d5562;
+  /* Text: bone and old parchment */
+  --color-fg: #e9e7e2;
+  --color-fg-muted: #9d9b97;
+  --color-fg-faint: #5d5c59;
 
-  /* Chrome + iridescent accents */
-  --color-chrome-1: #ffffff;
-  --color-chrome-2: #c9ced8;
-  --color-chrome-3: #7d8391;
-  --color-chrome-4: #2c2f37;
-  /* "Mono + ice": cold highlights instead of rainbow. */
-  --color-iri-1: #bfeeff; /* ice */
-  --color-iri-2: #7fa6c8; /* steel */
-  --color-iri-3: #eef7ff; /* frost */
-  --color-iri-4: #4d6c8c; /* deep steel */
-  --color-live: #9fe6ff;
+  /* Moonlit stone, brightest to darkest (display text, bars, frames) */
+  --color-stone-1: #f3f1ec;
+  --color-stone-2: #bebcb7;
+  --color-stone-3: #74726e;
+  --color-stone-4: #2a2a2c;
 
-  /* Type */
-  --font-display: 'Unbounded Variable', ui-sans-serif, system-ui, sans-serif;
-  --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+  /* Accents: bone white for highlights, greys where colour used to be */
+  --color-glass-1: #f6f3ec; /* bone: the main accent */
+  --color-glass-2: #8d8b87;
+  --color-glass-3: #ffffff;
+  --color-glass-4: #55544f;
+  --color-live: #f6f3ec;
+
+  /* Type: pixel blackletter for display, pixel sans for reading, tiny caps for labels */
+  --font-display: 'Jacquard 24', 'UnifrakturMaguntia', serif;
+  --font-sans: 'Pixelify Sans Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Silkscreen', ui-monospace, monospace;
+
+  /* Pixel art has no rounded corners (circles stay circles). */
+  --radius-sm: 0;
+  --radius: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
+  --radius-2xl: 0;
+  --radius-3xl: 0;
 
   /* Shape + motion */
-  --radius-card: 1.25rem;
+  --radius-card: 0;
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 :root {
-  /* Classic "chrome horizon": bright sky, hard dark band, bright floor. */
-  --chrome-gradient: linear-gradient(
+  /* Moonlit stone in hard, posterized bands (no smooth gradients in pixel art). */
+  --stone-gradient: linear-gradient(
     180deg,
-    var(--color-chrome-1) 0%,
-    var(--color-chrome-2) 36%,
-    var(--color-chrome-3) 49%,
-    var(--color-chrome-4) 50%,
-    var(--color-chrome-2) 53%,
-    var(--color-chrome-1) 72%,
-    var(--color-chrome-3) 100%
+    var(--color-stone-1) 0 38%,
+    var(--color-stone-2) 38% 62%,
+    var(--color-stone-3) 62% 84%,
+    var(--color-stone-2) 84%
   );
-  --iri-gradient: linear-gradient(
+  /* Silver leaf, for small highlighted words. */
+  --gilt-gradient: linear-gradient(
+    180deg,
+    var(--color-glass-3) 0 40%,
+    var(--color-stone-2) 40% 75%,
+    var(--color-stone-3) 75%
+  );
+  /* Leaded panes, in greys. */
+  --glass-gradient: linear-gradient(
     115deg,
-    var(--color-iri-1),
-    var(--color-iri-2),
-    var(--color-iri-3),
-    var(--color-iri-4),
-    var(--color-iri-1)
+    var(--color-stone-3) 0 25%,
+    var(--color-stone-1) 25% 50%,
+    var(--color-glass-4) 50% 75%,
+    var(--color-stone-2) 75%
   );
   /* Horizontal and starts/ends on the same color, so it tiles with no seam
-     (used for the animated star/number shimmer). */
-  --iri-loop: linear-gradient(
+     (used for the animated cross / numeral shimmer: light moving through glass). */
+  --glass-loop: linear-gradient(
     90deg,
-    var(--color-iri-1),
-    var(--color-iri-4),
-    var(--color-iri-3),
-    var(--color-iri-2),
-    var(--color-iri-1)
+    var(--color-glass-1),
+    var(--color-glass-3),
+    var(--color-glass-2),
+    var(--color-glass-4),
+    var(--color-glass-1)
   );
+  --panel-bg: rgb(10 10 12 / 0.86);
   --section-pad: clamp(5rem, 12vw, 10rem);
 }
 
-/* Konami "mercury" mode: a warmer, liquid-gold reskin. */
-:root[data-mode='mercury'] {
-  --color-chrome-1: #fff6d6;
-  --color-chrome-2: #f0c96b;
-  --color-chrome-3: #8a5a1c;
-  --color-iri-1: #ffd27d;
-  --color-iri-2: #ff9f6b;
-  --color-iri-3: #ffe9a8;
-  --color-iri-4: #fff;
+/* Konami "blood moon" mode: the moon turns red and the glass bleeds. */
+:root[data-mode='bloodmoon'] {
+  --color-stone-1: #ffd9cf;
+  --color-stone-2: #d98a7f;
+  --color-stone-3: #7a2a33;
+  --color-glass-1: #ff4d4d;
+  --color-glass-2: #8a0f24;
+  --color-glass-3: #ffb3a1;
+  --color-glass-4: #c2263c;
+  --color-live: #ff5a5a;
 }

@@ -1,103 +1,106 @@
 /**
- * Looks for the animated page background (src/fx/ShaderBackground.tsx).
- * Each page section sets `data-bg="<theme name>"`; the background morphs
- * between themes as you scroll from one section into the next.
+ * Moods for the night scene behind the page (src/fx/NightScene.tsx).
+ * Each page section sets `data-bg="<theme name>"`; the weather and sky blend
+ * from one mood to the next as you scroll between sections.
  */
 export interface BgTheme {
   /**
-   * The four posterized bands, darkest to brightest: [base, shadow, mid, highlight].
-   * The highlight only shows in the brightest spots, so keep the first two dark.
+   * The sky's four posterized cloud bands, darkest to brightest:
+   * [clear sky, cloud shadow, cloud body, moonlit cloud edge].
    */
-  colors: [string, string, string, string]
-  /** Zoom of the noise field: higher = smaller, busier shapes. */
-  scale: number
-  /** How strongly the flow folds in on itself. */
-  warp: number
-  /** Flow speed. */
+  sky: [string, string, string, string]
+  /** Rain density, 0 (dry) to 1 (downpour). */
+  rain: number
+  /** Lightning strikes per minute (on average). */
+  storm: number
+  /** Cloud cover, 0 (clear, starry) to 1 (overcast). */
+  clouds: number
+  /** Ground fog, 0 to 1. */
+  fog: number
+  /** Candlelight in the windows and lanterns, 0 to 1. */
+  glow: number
+  /** How much the rain slants (pixels sideways per pixel down). */
+  wind: number
+  /** How fast the clouds drift. */
   speed: number
-  /** 0 = soft blobs, 1 = thin glowing ribbons. */
-  ribbons: number
-  /** Overall brightness (0 to 1). Lower = fewer bright bands. */
-  intensity: number
-  /** Balatro-style spiral twist (0 = none). */
-  swirl: number
 }
 
-// "Mono + ice": near-black and graphite with cold highlights. Sections differ by a
-// slight hue shift and by the shape of the flow.
+// Monochrome night: near-black sky, charcoal storm clouds, moonlit grey edges.
+// Sections differ in weather, so walking feels like the storm moving through.
 export const bgThemes = {
   hero: {
-    // Kept dim: the hero wordmark is difference-blended over it.
-    colors: ['#040507', '#0d1219', '#18222d', '#6f9db3'],
-    scale: 1.1,
-    warp: 1.2,
+    sky: ['#08080a', '#121214', '#1d1d21', '#58585e'],
+    rain: 0.55,
+    storm: 2,
+    clouds: 0.55,
+    fog: 0.25,
+    glow: 0.9,
+    wind: 0.18,
     speed: 0.5,
-    ribbons: 0.15,
-    intensity: 0.8,
-    swirl: 0.6,
   },
   links: {
-    colors: ['#030608', '#0e202c', '#184151', '#bdf2ff'],
-    scale: 1.5,
-    warp: 1.8,
+    sky: ['#07070a', '#111114', '#1c1c20', '#55555c'],
+    rain: 0.75,
+    storm: 3,
+    clouds: 0.7,
+    fog: 0.3,
+    glow: 0.8,
+    wind: 0.28,
     speed: 0.7,
-    ribbons: 0.65,
-    intensity: 0.85,
-    swirl: 0.3,
   },
   music: {
-    colors: ['#050507', '#1a1d2c', '#2e3656', '#c3cfff'],
-    scale: 1.3,
-    warp: 1.5,
-    speed: 0.9,
-    ribbons: 0.3,
-    intensity: 0.9,
-    swirl: 0.9,
+    sky: ['#08080a', '#121214', '#1c1c20', '#505056'],
+    rain: 0.6,
+    storm: 4,
+    clouds: 0.75,
+    fog: 0.35,
+    glow: 1,
+    wind: 0.22,
+    speed: 0.8,
   },
   work: {
-    colors: ['#030506', '#0f1b1f', '#1c353a', '#a6efe4'],
-    scale: 2.1,
-    warp: 0.9,
-    speed: 0.6,
-    ribbons: 0.9,
-    intensity: 0.85,
-    swirl: 0.15,
+    sky: ['#060608', '#0d0d10', '#161619', '#3e3e44'],
+    rain: 0.95,
+    storm: 6,
+    clouds: 0.9,
+    fog: 0.4,
+    glow: 0.75,
+    wind: 0.35,
+    speed: 1,
   },
   about: {
-    colors: ['#060607', '#1d2025', '#323942', '#e6edf5'],
-    scale: 0.9,
-    warp: 1.05,
+    sky: ['#08080a', '#131315', '#222226', '#76767c'],
+    rain: 0.3,
+    storm: 0.5,
+    clouds: 0.35,
+    fog: 0.55,
+    glow: 1,
+    wind: 0.1,
     speed: 0.3,
-    ribbons: 0.1,
-    intensity: 0.7,
-    swirl: 0.5,
   },
   notes: {
-    colors: ['#040405', '#14161b', '#242831', '#aebccb'],
-    scale: 1.7,
-    warp: 1.35,
-    speed: 0.3,
-    ribbons: 0.45,
-    intensity: 0.8,
-    swirl: 0.2,
+    sky: ['#070709', '#111113', '#1d1d20', '#56565b'],
+    rain: 0.45,
+    storm: 1,
+    clouds: 0.6,
+    fog: 0.8,
+    glow: 0.9,
+    wind: 0.15,
+    speed: 0.35,
   },
   footer: {
-    colors: ['#020304', '#0f1f33', '#1c3e60', '#dff6ff'],
-    scale: 1.4,
-    warp: 1.65,
-    speed: 0.8,
-    ribbons: 0.5,
-    intensity: 0.95,
-    swirl: 1,
+    sky: ['#050506', '#0d0d0f', '#18181b', '#4e4e55'],
+    rain: 1,
+    storm: 9,
+    clouds: 0.95,
+    fog: 0.6,
+    glow: 0.7,
+    wind: 0.42,
+    speed: 1.2,
   },
 } satisfies Record<string, BgTheme>
 
 export type BgThemeName = keyof typeof bgThemes
 
-/** Konami "mercury" mode swaps every theme's colors for liquid gold. */
-export const mercuryColors: BgTheme['colors'] = [
-  '#0a0703',
-  '#4f330c',
-  '#7a4f18',
-  '#ffd27d',
-]
+/** Konami "blood moon" mode swaps every theme's sky for a red one. */
+export const bloodMoonSky: BgTheme['sky'] = ['#0a0306', '#1f070d', '#3a0d16', '#a3313b']

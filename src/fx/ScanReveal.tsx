@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 const ease = [0.65, 0, 0.35, 1] as const
 
 /**
- * Reveals its content top-to-bottom behind a bright ice scan line, once, when
+ * Reveals its content top-to-bottom behind a line of moonlight, once, when
  * scrolled into view. The clip leaves a margin at the end so tilting content
  * isn't cut off.
  */
@@ -36,7 +36,7 @@ export function ScanReveal({
       </motion.div>
       <motion.span
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 h-px bg-iri-1 shadow-[0_0_18px_3px_rgb(191_238_255/0.55)]"
+        className="pointer-events-none absolute inset-x-0 h-0.5 bg-glass-1 shadow-[0_0_18px_3px_rgb(236_236_240/0.4)]"
         variants={{
           hidden: { top: '0%', opacity: 0 },
           shown: {

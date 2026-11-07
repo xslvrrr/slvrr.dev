@@ -44,7 +44,7 @@ export function JewelCase({ children }: { children: ReactNode }) {
   const glintAngle = useTransform([sx, sy], ([x, y]: number[]) =>
     Math.round((Math.atan2(y - 0.5, x - 0.5) * 180) / Math.PI + 90),
   )
-  const glint = useMotionTemplate`linear-gradient(${glintAngle}deg, transparent 30%, rgb(235 248 255 / 0.95) 50%, transparent 70%)`
+  const glint = useMotionTemplate`linear-gradient(${glintAngle}deg, transparent 30%, rgb(255 236 200 / 0.95) 50%, transparent 70%)`
   const glintOpacity = useTransform(tilt, [0, 0.45], [0.2, 1])
   const shadowScale = useTransform(lift, [0, 1], [1, 1.15])
   const shadowOpacity = useTransform(lift, [0, 1], [0.55, 0.35])
@@ -76,7 +76,7 @@ export function JewelCase({ children }: { children: ReactNode }) {
         {/* back tray */}
         <div
           aria-hidden
-          className="absolute inset-0 rounded-[6px] border border-white/5 bg-[#07090d]"
+          className="absolute inset-0 rounded-[6px] border border-white/5 bg-[#09070d]"
           style={{ transform: `translateZ(${LID - DEPTH}px)` }}
         />
         {/* side walls: each rotated 90° about one edge, running from the lid back to the tray */}
@@ -148,7 +148,7 @@ function Wall({
   return (
     <div
       aria-hidden
-      className={`absolute bg-gradient-to-b from-[#1b222c] via-[#0e1218] to-[#1b222c] ${className}`}
+      className={`absolute bg-gradient-to-b from-[#221c2a] via-[#110e16] to-[#221c2a] ${className}`}
       style={{
         [axis === 'y' ? 'width' : 'height']: size,
         transform: `translateZ(${LID}px) ${rotate}`,

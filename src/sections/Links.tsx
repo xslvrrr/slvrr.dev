@@ -8,6 +8,7 @@ import {
 import { useRef } from 'react'
 import { Icon } from '@/components/Icon'
 import { copy } from '@/content/copy'
+import { Landmark } from '@/components/ExploreTrack'
 import { SectionHeading } from '@/components/SectionHeading'
 import { links } from '@/content/links'
 import { profile } from '@/content/profile'
@@ -25,10 +26,11 @@ export function Links() {
   const mouseX = useMotionValue(Infinity)
 
   return (
-    <section id="links" data-bg="links" className="section">
+    // A herald angel: this is where my voice carries from.
+    <section id="links" data-bg="links" data-landmark="herald" className="section">
       <SectionHeading {...copy.sections.links} />
-      <div className="grid items-start gap-8 lg:grid-cols-[1.4fr_1fr]">
-        <div className="flex flex-col gap-6">
+      <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-8 lg:grid-cols-[1.4fr_1fr] explore:flex explore:gap-0">
+        <div className="flex min-w-0 flex-col gap-6 explore:w-[40vw]">
           {/* macOS-style magnifying dock */}
           <nav
             aria-label="Social links"
@@ -48,7 +50,7 @@ export function Links() {
                   target="_blank"
                   rel="noreferrer"
                   onMouseEnter={sfx.tick}
-                  className="group flex items-center justify-between rounded-xl border border-line px-4 py-3 transition-colors hover:border-line-strong hover:bg-white/[0.03]"
+                  className="group flex items-center justify-between border-2 border-line bg-ink/70 px-4 py-3 transition-colors hover:border-glass-1/50 hover:text-glass-3"
                 >
                   <span className="flex items-center gap-3">
                     <Icon
@@ -57,15 +59,18 @@ export function Links() {
                     />
                     <ScrambleText text={l.label} trigger="hover" />
                   </span>
-                  <span className="font-mono text-xs text-fg-faint transition-transform group-hover:translate-x-1 group-hover:text-fg">
-                    ↗
+                  <span className="font-mono text-xs text-fg-faint transition-transform group-hover:translate-x-1 group-hover:text-glass-1">
+                    →
                   </span>
                 </a>
               </li>
             ))}
           </ul>
         </div>
-        <DiscordCard />
+        <Landmark className="w-[30vw]" />
+        <div className="explore:w-[26vw]">
+          <DiscordCard />
+        </div>
       </div>
     </section>
   )
@@ -95,7 +100,7 @@ function DockItem({ link, mouseX }: { link: SocialLink; mouseX: MotionValue<numb
       onMouseEnter={sfx.tick}
       onClick={sfx.click}
       style={{ width: size, height: size }}
-      className="grid shrink-0 place-items-center rounded-2xl border border-line-strong bg-gradient-to-b from-chrome-2/20 to-chrome-4/40 text-fg shadow-[inset_0_1px_0_rgb(255_255_255/0.25)] transition-colors hover:text-white"
+      className="grid shrink-0 place-items-center border-2 border-line-strong bg-gradient-to-b from-stone-4 from-50% to-ink to-50% text-fg-muted shadow-[3px_3px_0_rgb(0_0_0/0.7),inset_2px_2px_0_rgb(255_255_255/0.08)] transition-colors hover:border-glass-1/70 hover:text-glass-3"
       whileTap={{ scale: 0.9 }}
     >
       <motion.span style={{ width: iconSize, height: iconSize }} className="grid">
@@ -128,17 +133,17 @@ function DiscordCard() {
             {p && p.discord_status !== 'offline' && (
               <>
                 <span
-                  className="absolute inset-0 animate-ping rounded-full opacity-60"
+                  className="absolute inset-0 animate-ping opacity-60"
                   style={{ background: statusColor[p.discord_status] }}
                 />
                 <span
-                  className="absolute inset-0 animate-ping rounded-full opacity-40 [animation-delay:0.5s]"
+                  className="absolute inset-0 animate-ping opacity-40 [animation-delay:0.5s]"
                   style={{ background: statusColor[p.discord_status] }}
                 />
               </>
             )}
             <span
-              className="relative h-2 w-2 rounded-full"
+              className="relative h-2 w-2"
               style={{
                 background: statusColor[p?.discord_status ?? 'offline'],
                 boxShadow: `0 0 12px ${statusColor[p?.discord_status ?? 'offline']}`,
@@ -161,13 +166,13 @@ function DiscordCard() {
           <img
             src={avatarUrl(p)}
             alt=""
-            className="h-16 w-16 rounded-full border border-line-strong"
+            className="mono-img h-16 w-16 border-2 border-line-strong shadow-[3px_3px_0_rgb(0_0_0/0.7)]"
           />
         ) : (
-          <div className="h-16 w-16 rounded-full border border-line-strong bg-gradient-to-br from-chrome-1 via-chrome-3 to-chrome-4" />
+          <div className="h-16 w-16 border-2 border-line-strong bg-gradient-to-br from-stone-3 from-50% to-stone-4 to-50%" />
         )}
         <div className="min-w-0">
-          <p className="truncate font-display text-xl font-semibold">
+          <p className="truncate font-display text-3xl leading-tight">
             {p?.discord_user.global_name ?? p?.discord_user.username ?? profile.name}
           </p>
           <p className="truncate font-mono text-xs text-fg-muted">
@@ -176,7 +181,7 @@ function DiscordCard() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-line bg-black/20 p-4">
+      <div className="border-2 border-line bg-black/30 p-4">
         {p?.listening_to_spotify && p.spotify ? (
           <Activity
             img={p.spotify.album_art_url}
@@ -225,9 +230,9 @@ function Activity({
   return (
     <div className="flex items-center gap-4">
       {img ? (
-        <img src={img} alt="" className="h-14 w-14 rounded-lg object-cover" />
+        <img src={img} alt="" className="mono-img h-14 w-14 object-cover" />
       ) : (
-        <div className="h-14 w-14 rounded-lg bg-ink-3" />
+        <div className="h-14 w-14 bg-ink-3" />
       )}
       <div className="min-w-0">
         <p className="eyebrow !text-[10px]">{label}</p>

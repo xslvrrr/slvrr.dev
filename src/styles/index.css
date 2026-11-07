@@ -1,12 +1,21 @@
 @import 'tailwindcss';
 @import './tokens.css';
 
+/* Wide screens explore the garden sideways (keep in sync with src/lib/explore.ts). */
+@custom-variant explore {
+  @media (min-width: 1024px) and (min-height: 600px) {
+    @slot;
+  }
+}
+
 @layer base {
   html {
     color-scheme: dark;
     background: var(--color-ink);
     color: var(--color-fg);
     font-family: var(--font-sans);
+    /* Pixel fonts only come in the weights they were drawn in: never fake bold. */
+    font-synthesis: none;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
@@ -25,15 +34,18 @@
     overflow-x: clip;
   }
 
+  img {
+    image-rendering: pixelated;
+  }
+
   ::selection {
-    background: var(--color-iri-1);
+    background: var(--color-glass-1);
     color: var(--color-ink);
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-iri-1);
+    outline: 2px dashed var(--color-glass-1);
     outline-offset: 3px;
-    border-radius: 6px;
   }
 
   @media (hover: hover) and (pointer: fine) {
@@ -45,87 +57,140 @@
 }
 
 @layer components {
-  /* Metallic text fill. Pair with a font-display heading. */
-  .text-chrome {
-    background: var(--chrome-gradient);
+  /* Moonlit stone text fill, in hard bands. Pair with a font-display heading. */
+  .text-stone {
+    background: var(--stone-gradient);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
 
-  /* A light sweep across chrome text. */
+  /* Gold leaf text fill. */
+  .text-gilt {
+    background: var(--gilt-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Candlelight passing across stone text, in stepped (pixel) motion. */
   .shimmer {
     background:
       linear-gradient(
           105deg,
-          transparent 40%,
-          rgb(255 255 255 / 0.9) 50%,
-          transparent 60%
+          transparent 42%,
+          var(--color-glass-3) 42% 47%,
+          var(--color-glass-1) 47% 53%,
+          transparent 53%
         ) -150%
         0 / 200% 100% no-repeat,
-      var(--chrome-gradient);
+      var(--stone-gradient);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    animation: shimmer 2.8s var(--ease-out-expo) infinite;
+    animation: shimmer 3.2s steps(28) infinite;
   }
 
   /* TextReveal animates each word with transforms, which breaks background-clip
      on the parent, so each word carries the gradient itself. */
-  .text-chrome [data-word] {
-    background: var(--chrome-gradient);
+  .text-stone [data-word] {
+    background: var(--stone-gradient);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
 
-  /* Shimmering ice text. The gradient tiles seamlessly and the animation moves
-     it exactly one period (-200% of a 200%-wide image), so there's no seam. */
-  .text-iri {
-    background: var(--iri-loop) 0 0 / 200% 100% repeat-x;
+  /* Light moving through stained glass. The gradient tiles seamlessly and the
+     animation moves it exactly one period, in steps, so it reads as pixels. */
+  .text-glass {
+    background: var(--glass-loop) 0 0 / 200% 100% repeat-x;
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    animation: iri-loop 6s linear infinite;
+    animation: glass-loop 6s steps(40) infinite;
   }
 
-  /* Glassy panel with a hairline chrome border. No backdrop-filter: blurring the
-     animated background behind every panel each frame is too expensive. */
+  /*
+   * A pixel-art stone frame: dark outline, a stone inner line, notched corners
+   * and a gold rivet in each corner. Drawn as a 12×12 SVG nine-slice where one
+   * unit is 2 CSS pixels. No backdrop-filter: blurring the animated scene
+   * behind every panel each frame is too expensive.
+   */
   .panel {
     position: relative;
-    border-radius: var(--radius-card);
-    background:
-      linear-gradient(180deg, rgb(255 255 255 / 0.06), rgb(255 255 255 / 0.015)),
-      rgb(10 10 14 / 0.55);
-    border: 1px solid var(--color-line);
-    box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.08),
-      0 30px 60px -30px rgb(0 0 0 / 0.8);
+    border: 8px solid transparent;
+    border-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' shape-rendering='crispEdges'%3E%3Cpath fill='rgba(0,0,0,.75)' d='M2 0h8v1H2zM0 2h1v8H0zM11 2h1v8h-1zM2 11h8v1H2zM1 1h1v1H1zM10 1h1v1h-1zM1 10h1v1H1zM10 10h1v1h-1z'/%3E%3Cpath fill='%233a3a3e' d='M2 1h8v1H2zM1 2h1v8H1zM10 2h1v8h-1zM2 10h8v1H2z'/%3E%3Cpath fill='rgba(10,9,17,.88)' d='M2 2h8v8H2z'/%3E%3Cpath fill='%23cfccc5' d='M2 2h1v1H2zM9 2h1v1H9zM2 9h1v1H2zM9 9h1v1H9z'/%3E%3C/svg%3E")
+      4 fill / 8px stretch;
+  }
+
+  /* A small pixel "stamp" with a hard drop shadow (buttons, chips). */
+  .pixel-btn {
+    border: 2px solid var(--color-line-strong);
+    background: rgb(10 9 17 / 0.8);
+    box-shadow: 3px 3px 0 0 rgb(0 0 0 / 0.7);
+    transition:
+      transform 0.12s steps(2),
+      box-shadow 0.12s steps(2),
+      border-color 0.2s,
+      color 0.2s;
+  }
+  .pixel-btn:hover:not(:disabled) {
+    border-color: var(--color-glass-1);
+    color: var(--color-glass-1);
+  }
+  .pixel-btn:active:not(:disabled) {
+    transform: translate(3px, 3px);
+    box-shadow: 0 0 0 0 rgb(0 0 0 / 0.7);
+  }
+
+  /* Hard pixel drop shadow for solid-colored display text. */
+  .pixel-shadow {
+    text-shadow:
+      0.045em 0.045em 0 rgb(0 0 0 / 0.9),
+      0 0 0.6em rgb(7 6 12 / 0.7);
+  }
+
+  /* A 4px checkerboard of ink, for dithered edges on solid shapes. */
+  .dither-edge {
+    background: repeating-conic-gradient(var(--color-ink) 0 25%, transparent 0 50%) 0 0 /
+      8px 8px;
+  }
+
+  /* Photos stay grey until you reach for them. */
+  .mono-img {
+    filter: grayscale(1) contrast(1.05) brightness(0.9);
+    transition: filter 0.5s steps(5);
+  }
+  :is(a, .group):hover .mono-img,
+  .mono-img:hover {
+    filter: none;
+  }
+  :root[data-mode='bloodmoon'] .mono-img {
+    filter: grayscale(1) sepia(1) hue-rotate(-50deg) saturate(3) brightness(0.7);
   }
 
   /* Used when WebGL isn't available for the animated background. */
   .static-bg {
     background:
-      radial-gradient(60vmax 60vmax at 10% 5%, rgb(127 166 200 / 0.1), transparent 70%),
-      radial-gradient(60vmax 60vmax at 95% 45%, rgb(191 238 255 / 0.06), transparent 70%),
-      radial-gradient(60vmax 60vmax at 40% 110%, rgb(77 108 140 / 0.12), transparent 70%);
+      radial-gradient(30vmax 30vmax at 78% 18%, rgb(232 224 207 / 0.12), transparent 60%),
+      linear-gradient(to bottom, #0b0a16, #141126 55%, #07060c);
   }
 
-  /* Faint CRT scanlines + vignette over the pixel background (static, so free). */
+  /* Faint CRT scanlines + vignette over the pixel scene (static, so free). */
   .crt {
     background:
-      repeating-linear-gradient(to bottom, rgb(0 0 0 / 0.28) 0 1px, transparent 1px 3px),
-      radial-gradient(ellipse at center, transparent 55%, rgb(0 0 0 / 0.55) 100%);
+      repeating-linear-gradient(to bottom, rgb(0 0 0 / 0.2) 0 1px, transparent 1px 4px),
+      radial-gradient(ellipse at center, transparent 50%, rgb(0 0 0 / 0.6) 100%);
   }
 
-  /* Wake under the resurface waterline: ice wash + 4px checker dither. */
-  .resurface-wake {
+  /* Wake under the "ascend" light line: a gold wash + 4px checker dither. */
+  .ascend-wake {
     background:
-      repeating-conic-gradient(rgb(4 5 7 / 0.55) 0 25%, transparent 0 50%) 0 0 / 8px 8px,
+      repeating-conic-gradient(rgb(7 6 12 / 0.6) 0 25%, transparent 0 50%) 0 0 / 8px 8px,
       linear-gradient(
         to bottom,
-        rgb(127 166 200 / 0.55),
-        rgb(10 14 20 / 0.92) 35%,
+        rgb(236 236 240 / 0.45),
+        rgb(12 12 14 / 0.92) 35%,
         transparent
       );
   }
@@ -142,10 +207,11 @@
 
   /* Equalizer bar idle animation (transform-only; see NowPlaying). */
   .eq-bar {
-    animation: eq 1.2s ease-in-out infinite alternate;
+    animation: eq 1.2s steps(5) infinite alternate;
   }
 
-  /* Notes: the title splits into an ice/red chromatic offset on hover. */
+  /* Notes: the title splits into a pale double image on hover, like a
+     reflection in old glass. */
   .chroma-hover {
     transition:
       text-shadow 0.35s var(--ease-out-expo),
@@ -153,8 +219,8 @@
   }
   .group:hover .chroma-hover {
     text-shadow:
-      -3px 0 rgb(159 230 255 / 0.75),
-      3px 0 rgb(255 60 90 / 0.55);
+      -3px 0 rgb(255 255 255 / 0.45),
+      3px 0 rgb(120 120 125 / 0.6);
   }
 
   /* Set by usePauseOffscreen: nothing animates while it can't be seen. */
@@ -170,10 +236,19 @@
 
   .eyebrow {
     font-family: var(--font-mono);
-    font-size: 0.75rem;
-    letter-spacing: 0.2em;
+    font-size: 0.6875rem;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--color-fg-muted);
+  }
+
+  /* Everything in a section gets a hard pixel shadow, so it reads over the scene.
+     Gradient-filled text can't take one (it would paint over the fill). */
+  .section {
+    text-shadow: 2px 2px 0 rgb(0 0 0 / 0.75);
+  }
+  .section :is(.text-stone, .text-gilt, .text-glass, .shimmer, .text-stone [data-word]) {
+    text-shadow: none;
   }
 
   .section {
@@ -184,12 +259,31 @@
     margin-inline: auto;
   }
 
+  /* While exploring, each section is a screen-tall stop along the walk, as
+     wide as its content, with its landmark standing in a gap (<Landmark/>). */
+  @media (min-width: 1024px) and (min-height: 600px) {
+    .section {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      flex-shrink: 0;
+      width: max-content;
+      max-width: none;
+      height: 100svh;
+      margin: 0;
+      padding: 5.5rem 4vw 3.5rem;
+    }
+  }
+
   .section-title {
     font-family: var(--font-display);
-    font-weight: 700;
-    font-size: clamp(2.25rem, 7vw, 5.5rem);
+    font-weight: 400;
+    font-size: clamp(3rem, 9vw, 7rem);
+    @media (min-width: 1024px) and (min-height: 600px) {
+      font-size: clamp(3rem, 11vh, 6.5rem);
+    }
     line-height: 0.95;
-    letter-spacing: -0.03em;
+    letter-spacing: 0;
   }
 }
 
@@ -205,7 +299,7 @@
   }
 }
 
-@keyframes iri-loop {
+@keyframes glass-loop {
   to {
     background-position: -200% 0;
   }
