@@ -1,4 +1,4 @@
-import { PATH, type V2 } from './stations'
+import type { V2 } from './layout'
 
 /**
  * The walkable path as a dense polyline with rounded corners, measured by
@@ -21,7 +21,7 @@ export interface Walk {
 export const yawTo = (ax: number, az: number, bx: number, bz: number) =>
   Math.atan2(-(bx - ax), -(bz - az))
 
-export function buildWalk(radius = 3.5, step = 0.25): Walk {
+export function buildWalk(PATH: readonly V2[], radius = 3.5, step = 0.25): Walk {
   const pts: [number, number][] = []
   const push = (x: number, z: number) => {
     const last = pts[pts.length - 1]

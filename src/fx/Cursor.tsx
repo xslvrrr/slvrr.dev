@@ -21,6 +21,7 @@ export function Cursor() {
     if (!fine) return
     document.documentElement.classList.add('has-cursor')
     const move = (e: PointerEvent) => {
+      if (document.pointerLockElement) return
       x.set(e.clientX)
       y.set(e.clientY)
       setVisible(true)
@@ -28,6 +29,11 @@ export function Cursor() {
       setHover(el ? (el.getAttribute('data-cursor') ?? '') : null)
     }
     const leave = () => setVisible(false)
+    // while the mouse is captured for looking around, the crosshair takes over
+    const onLock = () => {
+      if (document.pointerLockElement) setVisible(false)
+    }
+    document.addEventListener('pointerlockchange', onLock)
     const press = () => setDown(true)
     const release = () => setDown(false)
     window.addEventListener('pointermove', move)
@@ -38,6 +44,7 @@ export function Cursor() {
       document.documentElement.classList.remove('has-cursor')
       window.removeEventListener('pointermove', move)
       document.removeEventListener('pointerleave', leave)
+      document.removeEventListener('pointerlockchange', onLock)
       window.removeEventListener('pointerdown', press)
       window.removeEventListener('pointerup', release)
     }

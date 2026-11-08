@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { profile } from '@/content/profile'
-import { enteredStore, soundStore, useStore } from '@/lib/store'
+import { soundStore, useStore } from '@/lib/store'
 import { worldStore } from './state'
 
 const stepped = (n: number) => (t: number) => Math.round(t * n) / n
@@ -13,12 +13,9 @@ const stepped = (n: number) => (t: number) => Math.round(t * n) / n
  */
 export function GateTitle({ onEnter }: { onEnter: () => void }) {
   const { mode, progress } = useStore(worldStore)
-  const entered = useStore(enteredStore)
   const sound = useStore(soundStore)
   const ready = mode === 'gate'
-
-  // Returning visitors skip the gate: just a dark screen while the world builds.
-  if (entered && mode === 'loading') return <Loader progress={progress} />
+  const away = mode !== 'gate' && mode !== 'loading'
 
   return (
     <motion.div
@@ -33,7 +30,9 @@ export function GateTitle({ onEnter }: { onEnter: () => void }) {
       )}
       <motion.div
         className="flex flex-col items-center gap-3"
-        animate={{ opacity: mode === 'opening' ? 0 : 1, y: mode === 'opening' ? -20 : 0 }}
+        // hidden from the moment the gate starts to open and for good after
+        // (it used to come back while the overlay faded out)
+        animate={{ opacity: away ? 0 : 1, y: away ? -20 : 0 }}
         transition={{ duration: 1 }}
       >
         <p className="font-mono text-lg uppercase tracking-[0.2em] text-fg/80 [text-shadow:2px_2px_0_#000] md:text-xl">
@@ -87,22 +86,6 @@ export function GateTitle({ onEnter }: { onEnter: () => void }) {
           </AnimatePresence>
         )}
       </div>
-    </motion.div>
-  )
-}
-
-function Loader({ progress }: { progress: number }) {
-  return (
-    <motion.div
-      className="fixed inset-0 z-30 grid place-items-center bg-ink"
-      exit={{ opacity: 0, transition: { duration: 1 } }}
-    >
-      <span className="h-2 w-56 border-2 border-fg/40 p-px">
-        <span
-          className="block h-full origin-left bg-fg"
-          style={{ transform: `scaleX(${Math.round(progress * 20) / 20})` }}
-        />
-      </span>
     </motion.div>
   )
 }
