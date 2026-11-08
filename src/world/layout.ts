@@ -117,7 +117,7 @@ export const zoneAt = (x: number, z: number) =>
 /** Directions at each junction: [label, world direction (dx, dz)]. */
 export const signposts: { at: V2; arrows: [string, V2][] }[] = [
   {
-    at: [-1.45, -15.6],
+    at: [-0.95, -16.9],
     arrows: [
       ['fountain', [1, 0]],
       ['no way through', [0, -1]],
@@ -125,7 +125,7 @@ export const signposts: { at: V2; arrows: [string, V2][] }[] = [
     ],
   },
   {
-    at: [18.55, -15.7],
+    at: [20.95, -16.9],
     arrows: [
       ['mausoleum', [0, -1]],
       ['no way through', [1, 0]],
@@ -133,7 +133,7 @@ export const signposts: { at: V2; arrows: [string, V2][] }[] = [
     ],
   },
   {
-    at: [21.45, -37.6],
+    at: [21.0, -39.0],
     arrows: [
       ['shrine', [-1, 0]],
       ['no way through', [0, -1]],
@@ -141,7 +141,7 @@ export const signposts: { at: V2; arrows: [string, V2][] }[] = [
     ],
   },
   {
-    at: [-2.55, -37.6],
+    at: [-3.0, -39.0],
     arrows: [
       ['graves', [0, -1]],
       ['calvary', [0, -1]],
@@ -170,7 +170,7 @@ export function buildGrid() {
   g.rect(-4 - W, -40, -4 + W, -61, F) // → the calvary
 
   // the fountain clearing
-  g.circle(FOUNTAIN[0], FOUNTAIN[1], 5.3, F)
+  g.circle(FOUNTAIN[0], FOUNTAIN[1], 6.6, F)
   // the mausoleum yard, through a gap in the hedge
   g.rect(23, -37, 39, -23, F)
   g.rect(21.5, -32, 23.5, -28, F)

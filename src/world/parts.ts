@@ -124,7 +124,7 @@ export function createMist(walk: Walk, count = 90) {
   for (let i = 0; i < count; i++) {
     const s = r() * walk.length
     const p = walk.at(s)
-    const c = [p[0] + (r() - 0.5) * 7, 0.35 + r() * 0.6, p[1] + (r() - 0.5) * 7]
+    const c = [p[0] + (r() - 0.5) * 7, 0.15 + r() * 0.25, p[1] + (r() - 0.5) * 7]
     const w = 4 + r() * 5
     const seed = r() * 100
     for (const [cx, cy] of [
@@ -135,7 +135,8 @@ export function createMist(walk: Walk, count = 90) {
     ]) {
       pos.push(c[0], c[1], c[2])
       corner.push(cx, cy)
-      size.push(w, w * 0.45, seed)
+      // low and flat, so it pools on the ground instead of standing up like a wall
+      size.push(w, Math.min(1.3, w * 0.22), seed)
       uv.push(cx + 0.5, cy + 0.5)
     }
     const k = i * 4

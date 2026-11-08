@@ -69,26 +69,39 @@ export function World() {
   }, [])
 
   // ---- the cursor ----
+  // Inside, the mouse is captured by default: moving it turns your head and
+  // the crosshair aims. V frees it (to point at and click things) and
+  // captures it again. Real pointer lock is asked for too, but not relied on:
+  // browsers can refuse it (an embedded preview, the cooldown after Esc), and
+  // then moving the mouse over the page still turns the view.
   const lock = useCallback(() => {
     if (!fine) return
+    patchWorld({ locked: true })
+    engine.current?.setPointer(null)
+    document.documentElement.classList.add('captured')
     try {
-      void canvas.current?.requestPointerLock()?.catch?.(() => {})
+      const req = canvas.current?.requestPointerLock() as Promise<void> | undefined
+      req?.catch?.(() => {})
     } catch {
-      // not allowed right now (no user gesture); the hint says how
+      // refused: the fallback above still turns the view
     }
   }, [fine])
-  const unlock = () => {
+  const unlock = useCallback(() => {
+    patchWorld({ locked: false })
+    document.documentElement.classList.remove('captured')
     if (document.pointerLockElement) document.exitPointerLock()
-  }
+  }, [])
   useEffect(() => {
+    // The browser lets go of the mouse on Esc: treat that as freeing the cursor.
     const onChange = () => {
-      const locked = document.pointerLockElement === canvas.current
-      patchWorld({ locked })
-      if (locked) engine.current?.setPointer(null)
+      if (!document.pointerLockElement && worldStore.get().locked) unlock()
     }
     document.addEventListener('pointerlockchange', onChange)
-    return () => document.removeEventListener('pointerlockchange', onChange)
-  }, [])
+    return () => {
+      document.removeEventListener('pointerlockchange', onChange)
+      document.documentElement.classList.remove('captured')
+    }
+  }, [unlock])
 
   // ---- reading things up close pauses the walk ----
   const reading = location.pathname.startsWith('/notes/') || state.sticky !== null
@@ -98,7 +111,7 @@ export function World() {
     e.setPaused(reading)
     e.setZoom(state.sticky !== null)
     if (reading) unlock()
-  }, [reading, ready, state.sticky])
+  }, [reading, ready, state.sticky, unlock])
 
   // ---- using things ----
   const activate = useCallback(
@@ -137,7 +150,7 @@ export function World() {
           return navigate(`/notes/${notes[aim.index].slug}`)
       }
     },
-    [navigate, stats],
+    [navigate, stats, unlock],
   )
 
   const walkman = useCallback(() => {
@@ -174,9 +187,9 @@ export function World() {
       if (ev.code === 'KeyE' || ev.code === 'Enter') activate(e.currentAim())
       else if (ev.code === 'KeyF') walkman()
       else if (ev.code === 'KeyV') {
-        if (document.pointerLockElement) unlock()
+        if (worldStore.get().locked) unlock()
         else lock()
-      }
+      } else if (ev.code === 'Escape' && worldStore.get().locked) unlock()
     }
     const down = (ev: KeyboardEvent) => onKey(ev, true)
     const up = (ev: KeyboardEvent) => onKey(ev, false)
@@ -189,7 +202,7 @@ export function World() {
       window.removeEventListener('keyup', up)
       window.removeEventListener('blur', blur)
     }
-  }, [enter, lock, activate, walkman])
+  }, [enter, lock, unlock, activate, walkman])
 
   // ---- mouse and touch on the world ----
   const drag = useRef<{
@@ -201,8 +214,7 @@ export function World() {
   } | null>(null)
   useEffect(() => {
     const onMove = (ev: MouseEvent) => {
-      if (document.pointerLockElement === canvas.current)
-        engine.current?.turn(ev.movementX, ev.movementY)
+      if (worldStore.get().locked) engine.current?.turn(ev.movementX, ev.movementY)
     }
     window.addEventListener('mousemove', onMove)
     return () => window.removeEventListener('mousemove', onMove)
@@ -211,7 +223,7 @@ export function World() {
   const onPointerDown = (ev: React.PointerEvent) => {
     const { mode } = worldStore.get()
     if (mode === 'gate') return enter()
-    if (mode !== 'play' || document.pointerLockElement) return
+    if (mode !== 'play' || worldStore.get().locked) return
     drag.current = {
       id: ev.pointerId,
       x: ev.clientX,
@@ -228,7 +240,7 @@ export function World() {
   const onPointerMove = (ev: React.PointerEvent) => {
     const e = engine.current
     if (!e) return
-    if (ev.pointerType === 'mouse' && !document.pointerLockElement)
+    if (ev.pointerType === 'mouse' && !worldStore.get().locked)
       e.setPointer(
         (ev.clientX / window.innerWidth) * 2 - 1,
         -(ev.clientY / window.innerHeight) * 2 + 1,
@@ -248,8 +260,10 @@ export function World() {
     const d = drag.current
     drag.current = null
     if (!e || worldStore.get().mode !== 'play') return
-    if (document.pointerLockElement) {
-      // captured: a click uses whatever the crosshair is on
+    if (worldStore.get().locked) {
+      // captured: a click uses whatever the crosshair is on (and upgrades to
+      // real pointer lock, if the browser refused it before)
+      if (!document.pointerLockElement && ev.pointerType === 'mouse') lock()
       return activate(e.currentAim())
     }
     if (!d || d.moved > 8 || performance.now() - d.at > 500) return
@@ -261,7 +275,10 @@ export function World() {
     else if (ev.pointerType === 'mouse') lock()
   }
 
-  const closeNote = () => navigate('/')
+  const closeNote = () => {
+    navigate('/')
+    lock()
+  }
 
   return (
     <>

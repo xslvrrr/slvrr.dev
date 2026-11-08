@@ -240,6 +240,15 @@
     text-shadow: 0.05em 0.05em 0 rgb(0 0 0 / 0.9);
   }
 
+  /* While the mouse is captured for looking around, the crosshair replaces
+     every cursor (see World.tsx). */
+  html.captured [data-cursor-root] {
+    display: none;
+  }
+  html.captured canvas {
+    cursor: none !important;
+  }
+
   /* A sticky note from the shrine's fence, up close. */
   .sticky-note {
     background:
