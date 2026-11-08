@@ -81,7 +81,7 @@ export function MiniPlayer() {
               </motion.p>
             </AnimatePresence>
             <p className="truncate text-xs text-fg-muted">{track.artist}</p>
-            <p className="mt-0.5 flex items-center gap-1.5 truncate font-mono text-[10px] uppercase tracking-widest text-fg-faint">
+            <p className="mt-0.5 flex items-center gap-1.5 truncate font-mono text-sm uppercase tracking-widest text-fg-muted">
               <span
                 className={`h-1.5 w-1.5 shrink-0 ${live ? 'bg-live animate-pulse' : 'bg-fg-faint'}`}
               />

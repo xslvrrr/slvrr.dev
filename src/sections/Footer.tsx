@@ -10,7 +10,6 @@ import { useEffect, useRef, useState, type RefObject } from 'react'
 import { copy } from '@/content/copy'
 import { profile } from '@/content/profile'
 import { createPortal } from 'react-dom'
-import { Landmark } from '@/components/ExploreTrack'
 import { PixelCross } from '@/components/PixelCross'
 import { Magnetic } from '@/fx/Magnetic'
 import { resurface } from '@/lib/resurface'
@@ -23,72 +22,62 @@ export function Footer() {
   const [ripples, setRipples] = useState<number[]>([])
 
   return (
-    // The calvary at the end of the walk; "ascend" goes back to the gate.
-    <footer
-      data-bg="footer"
-      data-landmark="calvary"
-      className="relative overflow-hidden border-t-2 border-line explore:flex explore:shrink-0 explore:border-t-0"
-    >
-      <div className="section flex flex-col gap-16 !pb-10 explore:w-[54vw] explore:gap-10">
-        <div className="flex flex-col items-start justify-between gap-8 md:flex-row md:items-end">
-          <p className="max-w-md text-lg text-fg-muted">{copy.footer.outro}</p>
-          <Magnetic>
-            <a
-              href="#top"
-              data-cursor="up"
-              onClick={(e) => {
-                e.preventDefault()
-                setRipples((r) => [...r, Date.now()])
-                resurface()
-              }}
-              className="pixel-btn relative flex h-32 w-24 flex-col items-center justify-center gap-3 font-mono text-[10px] uppercase tracking-widest hover:!bg-glass-1 hover:!text-ink [clip-path:polygon(0_30%,15%_15%,30%_6%,50%_0,70%_6%,85%_15%,100%_30%,100%_100%,0_100%)]"
-            >
-              <PixelCross className="h-5 w-3.5" />
-              {copy.footer.backUp}
-              <AnimatePresence>
-                {ripples.map((id) => (
-                  <motion.span
-                    key={id}
-                    aria-hidden
-                    className="pointer-events-none absolute inset-0 border-2 border-glass-1"
-                    initial={{ scale: 1, opacity: 0.9 }}
-                    animate={{ scale: 2.6, opacity: 0 }}
-                    transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-                    onAnimationComplete={() =>
-                      setRipples((r) => r.filter((x) => x !== id))
-                    }
-                  />
-                ))}
-              </AnimatePresence>
-            </a>
-          </Magnetic>
-        </div>
-        <WaveWord word={profile.name} />
-        <div className="flex flex-wrap items-center justify-between gap-4 font-mono text-[11px] uppercase tracking-widest text-fg-faint">
-          <span>
-            © {year} {profile.name}
-          </span>
-          <span>{copy.footer.credit}</span>
-          <button
-            type="button"
-            onClick={() => setStats((v) => !v)}
-            className="h-6 w-6 border-2 border-line opacity-30 hover:opacity-100"
-            aria-label="Toggle stats"
-            data-cursor="?"
+    // The calvary at the end of the walk; the button takes you back to the gate.
+    <div className="relative flex flex-col gap-10">
+      <div className="flex flex-col items-start justify-between gap-8 sm:flex-row sm:items-end">
+        <p className="max-w-md text-lg text-fg-muted">{copy.footer.outro}</p>
+        <Magnetic>
+          <a
+            href="#top"
+            data-cursor="return"
+            onClick={(e) => {
+              e.preventDefault()
+              setRipples((r) => [...r, Date.now()])
+              resurface()
+            }}
+            className="pixel-btn relative flex h-32 w-28 flex-col items-center justify-center gap-3 px-2 text-center font-mono text-lg uppercase leading-none tracking-wider hover:!bg-fg hover:!text-ink [clip-path:polygon(0_30%,15%_15%,30%_6%,50%_0,70%_6%,85%_15%,100%_30%,100%_100%,0_100%)]"
           >
-            ?
-          </button>
-        </div>
+            <PixelCross className="h-5 w-3.5" />
+            {copy.footer.backUp}
+            <AnimatePresence>
+              {ripples.map((id) => (
+                <motion.span
+                  key={id}
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 border-2 border-fg"
+                  initial={{ scale: 1, opacity: 0.9 }}
+                  animate={{ scale: 2.6, opacity: 0 }}
+                  transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+                  onAnimationComplete={() => setRipples((r) => r.filter((x) => x !== id))}
+                />
+              ))}
+            </AnimatePresence>
+          </a>
+        </Magnetic>
       </div>
-      <Landmark className="w-[40vw]" />
-      {/* Portalled: inside the sideways-moving track, position: fixed wouldn't stay put. */}
+      <WaveWord word={profile.name} />
+      <div className="flex flex-wrap items-center justify-between gap-4 font-mono text-base uppercase tracking-widest text-fg-muted">
+        <span>
+          © {year} {profile.name}
+        </span>
+        <span>{copy.footer.credit}</span>
+        <button
+          type="button"
+          onClick={() => setStats((v) => !v)}
+          className="h-7 w-7 border-2 border-line opacity-40 hover:opacity-100"
+          aria-label="Toggle stats"
+          data-cursor="?"
+        >
+          ?
+        </button>
+      </div>
       {createPortal(
         <AnimatePresence>
           {stats && <StatsOverlay onClose={() => setStats(false)} />}
         </AnimatePresence>,
         document.body,
       )}
-    </footer>
+    </div>
   )
 }
 
@@ -129,7 +118,7 @@ function WaveWord({ word }: { word: string }) {
       }}
       onPointerLeave={() => mouseX.set(-1e5)}
     >
-      <p className="-my-[0.1em] flex justify-center py-[0.1em] font-display text-[28cqw] leading-none [filter:drop-shadow(0.03em_0.03em_0_rgb(0_0_0/0.85))]">
+      <p className="-my-[0.1em] flex justify-center py-[0.1em] font-display text-[34cqw] leading-none [filter:drop-shadow(0.03em_0.03em_0_rgb(0_0_0/0.85))]">
         {[...word].map((ch, i) => (
           <WaveLetter
             key={i}
@@ -209,11 +198,15 @@ function StatsOverlay({ onClose }: { onClose: () => void }) {
       `${window.innerWidth}×${window.innerHeight} @${window.devicePixelRatio}x`,
     ],
     ['mode', mode],
+    [
+      'scene',
+      `${Math.ceil(window.innerWidth / Math.min(4, Math.max(2, Math.round(window.innerHeight / 260))))}px wide`,
+    ],
     ['secret', mode === 'bloodmoon' ? 'the moon is red' : '↑↑↓↓←→←→ b a'],
   ]
   return (
     <motion.div
-      className="panel fixed bottom-6 right-6 z-[80] w-72 p-5 font-mono text-xs"
+      className="panel fixed bottom-6 left-6 z-[80] w-72 p-5 font-mono text-base"
       initial={{ opacity: 0, y: 20, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 20, scale: 0.95 }}
