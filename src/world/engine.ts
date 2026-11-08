@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { copy } from '@/content/copy'
+import { playerStore } from '@/lib/player'
 import { sfx } from '@/lib/sfx'
 import { onStrike, strike } from '@/lib/storm'
 import { modeStore } from '@/lib/store'
@@ -40,7 +41,7 @@ const RIGHT = new Set(['KeyD', 'ArrowRight'])
  */
 export class Engine {
   readonly renderer: THREE.WebGLRenderer
-  readonly camera = new THREE.PerspectiveCamera(66, 1, 0.05, 900)
+  readonly camera = new THREE.PerspectiveCamera(66, 1, 0.1, 400)
   world!: World
   private sky = createSky()
   private rain = createRain()
@@ -588,7 +589,8 @@ export class Engine {
           if (this.seen.has(s.line) || (s.line === 'walkman' && this.held)) continue
           const to = s.at.clone().sub(cam.position)
           const d = to.length()
-          if (d > 9 || to.normalize().dot(fwd) < 0.9) continue
+          // close enough to really notice it, and looking more or less at it
+          if (d > 4.5 || to.normalize().dot(fwd) < 0.88) continue
           if (!grid.sees(cam.position.x, cam.position.z, s.at.x, s.at.z, 0.4)) continue
           this.seen.add(s.line)
           say(copy.lines[s.line])
@@ -702,6 +704,11 @@ export class Engine {
       f.obj.rotation.z = Math.sin(t * 0.6 + i) * 0.04
     }
     this.updateCoin(dt)
+    // the walkman's reels turn while it's playing
+    if (playerStore.get().status === 'playing')
+      this.world.walkman.traverse((o) => {
+        if (o.name === 'reel') o.rotation.z -= dt * 5
+      })
     if (this.held) {
       const w = this.world.walkman
       const bobM = new THREE.Matrix4().makeTranslation(sway * 0.4, bobY * 0.5, 0)

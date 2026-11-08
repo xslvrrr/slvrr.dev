@@ -180,6 +180,23 @@ export function createScreens() {
   }
 
   let lcdText = ''
+  let lastNp: NowPlaying | null = null
+  let lastPlayer: PlayerState | null = null
+  /**
+   * The walkman's LCD always shows what slvrr is listening to right now (from
+   * Last.fm), and what it's playing once you press play.
+   */
+  const lcdLine = () => {
+    const st = lastPlayer
+    const t = st?.track
+    if (st?.status === 'loading') return 'TUNING IN...'
+    if (st?.status === 'error') return t ? `NO PREVIEW - ${t.title}` : 'NO SIGNAL'
+    if (st && t && (st.status === 'playing' || st.status === 'paused'))
+      return `${st.status === 'playing' ? '▶' : '❚❚'} ${t.title} - ${t.artist}`
+    if (lastNp)
+      return `${lastNp.playing ? 'LIVE' : 'LAST'}: ${lastNp.track} - ${lastNp.artist}   F TO PLAY`
+    return 'F TO PLAY'
+  }
   let lcdOffset = 0
   const drawLcd = () => {
     const s = lcd
@@ -208,17 +225,15 @@ export function createScreens() {
     lcd: lcd.texture,
     setDiscord: (p: LanyardPresence | null, state: LanyardState) =>
       void drawDiscord(p, state),
-    setMusic: (np: NowPlaying | null) => void drawMusic(np),
+    setMusic(np: NowPlaying | null) {
+      lastNp = np
+      void drawMusic(np)
+      lcdText = lcdLine()
+      drawLcd()
+    },
     setPlayer(state: PlayerState) {
-      const t = state.track
-      lcdText =
-        state.status === 'idle'
-          ? 'F  PLAY'
-          : state.status === 'loading'
-            ? 'TUNING IN...'
-            : state.status === 'error'
-              ? 'NO SIGNAL'
-              : `${state.status === 'playing' ? '▶' : '❚❚'} ${t ? `${t.title} - ${t.artist}` : ''}`
+      lastPlayer = state
+      lcdText = lcdLine()
       drawLcd()
     },
     /** Scrolls long titles across the LCD (called a few times a second). */

@@ -56,6 +56,7 @@ export function Cursor() {
   return (
     <div
       aria-hidden
+      data-cursor-root
       className="pointer-events-none fixed inset-0 z-[100] mix-blend-difference"
     >
       <motion.div

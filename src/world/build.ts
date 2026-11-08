@@ -97,7 +97,7 @@ export function buildWorld(): World {
   // ---- materials ----
   const M: Mats = {
     grass: lambert({ map: tex.grass() }),
-    trail: lambert({ map: tex.trail() }),
+    trail: decal(tex.trail(), 2),
     hedge: hedgeMaterial(),
     stone: lambert({ map: tex.stone() }),
     darkStone: lambert({ map: tex.stone(53, '#2f2f2c') }),
@@ -118,6 +118,8 @@ export function buildWorld(): World {
     glassMats.push(m)
     return m
   }
+  // the paving and flagstones lie flat on the grass: drawn as decals
+  const paving = decal((M.darkStone as THREE.MeshLambertMaterial).map!)
   const plasticMat = lambert({ color: 0x24252a })
   const hitMat = new THREE.MeshBasicMaterial({ visible: false })
 
@@ -150,8 +152,8 @@ export function buildWorld(): World {
   }
   trailRibbon(scene, walk, M.trail)
   // paving in the yard and before the calvary
-  pave(scene, M.darkStone, 23, -37, 39, -23)
-  pave(scene, M.darkStone, -15, -77, 7, -60.5)
+  pave(scene, paving, 23, -37, 39, -23)
+  pave(scene, paving, -15, -77, 7, -60.5)
 
   // ---- the wall, the railings and the iron gate ----
   const gate = buildGate(scene, M, lamps, flames)
@@ -439,7 +441,7 @@ export function buildWorld(): World {
     const paved = (x: number, z: number) =>
       (x > 23 && x < 39 && z > -37 && z < -23) ||
       (x > -15 && x < 7 && z > -77 && z < -60.5) ||
-      Math.hypot(x - FOUNTAIN[0], z - FOUNTAIN[1]) < 5.3
+      Math.hypot(x - FOUNTAIN[0], z - FOUNTAIN[1]) < 6.7
     let k = 0
     for (let tries = 0; tries < 60000 && k < N; tries++) {
       const x = grid.x0 + r() * grid.w * CELL
@@ -521,9 +523,9 @@ export function buildWorld(): World {
     const g = new THREE.Group()
     g.position.set(cx, 0, cz)
     scene.add(g)
-    const flag = new THREE.CircleGeometry(5.3, 18).rotateX(-Math.PI / 2)
-    tile(flag, 5, 5)
-    mesh(g, flag, M.darkStone, 0, 0.014, 0)
+    const flag = new THREE.CircleGeometry(6.5, 22).rotateX(-Math.PI / 2)
+    tile(flag, 6, 6)
+    mesh(g, flag, paving, 0, 0.02, 0)
     mesh(
       g,
       tile(new THREE.CylinderGeometry(2.7, 2.9, 0.65, 12), 8.5, 0.35),
@@ -586,13 +588,13 @@ export function buildWorld(): World {
       0,
     )
     statue(g, M, 'cherub', 0, 0, 0.055, 2.18, undefined, Math.PI * 0.08)
-    grid.circle(cx, cz, 3.0, Cell.Block, [Cell.Floor])
+    grid.circle(cx, cz, 2.95, Cell.Block, [Cell.Floor])
     hit('fountain', 0, { x: cx, y: 0.45, z: cz }, [2.85, 0.45, 2.85], 6.5)
 
     // two benches on the far side: a screen on one, a walkman on the other
     const benchAt = (a: number) => {
-      const x = cx + Math.cos(a) * 4.3
-      const z = cz + Math.sin(a) * 4.3
+      const x = cx + Math.cos(a) * 5.2
+      const z = cz + Math.sin(a) * 5.2
       const ry = -a + Math.PI / 2
       bench(x, z, ry)
       return { x, z, ry }
@@ -638,12 +640,10 @@ export function buildWorld(): World {
       })
       const back = lambert({ color: 0x15161a })
       const c = new THREE.Mesh(caseGeo, [edge, edge, edge, edge, front, back])
-      const propped = i % 3 === 1
       c.rotation.order = 'YXZ'
       c.rotation.y = yawTo(x, z, cx, cz + 6) + (r() - 0.5) * 0.9
-      c.rotation.x = propped ? -0.45 : -Math.PI / 2 + (r() - 0.5) * 0.15
-      c.rotation.z = (r() - 0.5) * 0.4
-      c.position.set(x, propped ? 0.2 : 0.035, z)
+      c.rotation.x = -Math.PI / 2
+      c.position.set(x, 0.05, z)
       c.userData.dynamic = true
       scene.add(c)
       hit('album', i, { x, y: 0.25, z }, [0.34, 0.28, 0.34], 4.5)
@@ -734,6 +734,21 @@ export function buildWorld(): World {
 
 // --------------------------------------------------------------------------
 
+/**
+ * A layer lying flat on the grass (the trail, paving, flagstones). Pulled
+ * towards the camera in the depth test, so the grass beneath never shows
+ * through in flickering patches.
+ */
+function decal(map: THREE.Texture, level = 1) {
+  // (the trail sits a level above the paving it crosses)
+  return lambert({
+    map,
+    polygonOffset: true,
+    polygonOffsetFactor: -2 * level,
+    polygonOffsetUnits: -4 * level,
+  })
+}
+
 /** Hedge leaves, mapped by world position so neighbouring blocks line up. */
 function hedgeMaterial() {
   const m = lambert({ map: tex.hedge() })
@@ -795,7 +810,7 @@ function trailRibbon(scene: THREE.Scene, walk: Walk, mat: THREE.Material) {
     const rx = -dz / l
     const rz = dx / l
     if (i > 0) s += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1])
-    pos.push(pts[i][0] - rx, 0.012, pts[i][1] - rz, pts[i][0] + rx, 0.012, pts[i][1] + rz)
+    pos.push(pts[i][0] - rx, 0.03, pts[i][1] - rz, pts[i][0] + rx, 0.03, pts[i][1] + rz)
     uv.push(s / 4, 0, s / 4, 1)
     if (i > 0) {
       const k = i * 2
@@ -820,7 +835,7 @@ function pave(
 ) {
   const g = new THREE.PlaneGeometry(x1 - x0, z1 - z0).rotateX(-Math.PI / 2)
   tile(g, (x1 - x0) / 2, (z1 - z0) / 2)
-  mesh(scene, g, mat, (x0 + x1) / 2, 0.013, (z0 + z1) / 2)
+  mesh(scene, g, mat, (x0 + x1) / 2, 0.02, (z0 + z1) / 2)
 }
 
 function wrap(text: string, max: number) {
@@ -985,10 +1000,18 @@ function walkmanModel(lcd: THREE.Texture) {
   window_.position.set(0, 0.03, 0.031)
   g.add(window_)
   for (const x of [-0.035, 0.035]) {
+    // a reel: a hub with a spoke across it, so you can see it turn
     const reel = new THREE.Mesh(
-      new THREE.CircleGeometry(0.018, 8),
+      new THREE.CircleGeometry(0.018, 6),
       basic({ color: 0x8c8678 }),
     )
+    reel.name = 'reel'
+    const spoke = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.03, 0.006),
+      basic({ color: 0x2a2620 }),
+    )
+    spoke.position.z = 0.001
+    reel.add(spoke)
     reel.position.set(x, 0.03, 0.032)
     g.add(reel)
   }

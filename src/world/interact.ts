@@ -4,6 +4,7 @@ import { profile } from '@/content/profile'
 import { projects } from '@/content/projects'
 import { timeline } from '@/content/timeline'
 import type { LanyardPresence, LanyardState } from '@/hooks/useLanyard'
+import { nowPlayingStore } from '@/lib/nowPlaying'
 import { playerStore } from '@/lib/player'
 import { createStore, useStore } from '@/lib/store'
 import type { Aim } from './state'
@@ -59,8 +60,11 @@ export function projectHref(i: number, stats?: Record<string, { url: string }> |
 /** The walkman's state in words, for its on-screen button. */
 export function useWalkmanLabel() {
   const { status, track } = useStore(playerStore)
-  if (status === 'idle') return 'play'
+  const np = useStore(nowPlayingStore)
   if (status === 'loading') return 'tuning in…'
-  if (status === 'error') return 'no signal'
-  return `${status === 'playing' ? 'pause' : 'play'}${track ? ` · ${track.title}` : ''}`
+  if (status === 'error') return 'no preview for this one'
+  if ((status === 'playing' || status === 'paused') && track)
+    return `${status === 'playing' ? 'pause' : 'play'} · ${track.title}`
+  // not playing yet: show what's on right now
+  return np ? `play · ${np.playing ? 'live' : 'last'}: ${np.track}` : 'play'
 }
