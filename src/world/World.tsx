@@ -71,37 +71,39 @@ export function World() {
   // ---- the cursor ----
   // Inside, the mouse is captured by default: moving it turns your head and
   // the crosshair aims. V frees it (to point at and click things) and
-  // captures it again. Real pointer lock is asked for too, but not relied on:
-  // browsers can refuse it (an embedded preview, the cooldown after Esc), and
-  // then moving the mouse over the page still turns the view.
+  // captures it again. "Captured" only ever means the browser has really
+  // locked the pointer, so the cursor can't drift out of the window. When a
+  // browser refuses (after Esc, which can't grant a lock, or within a moment
+  // of leaving one) the cursor simply stays free, and a click or V tries
+  // again. Only where there's no pointer lock at all is it imitated.
+  const setCaptured = useCallback((on: boolean) => {
+    patchWorld({ locked: on })
+    document.documentElement.classList.toggle('captured', on)
+    if (on) engine.current?.setPointer(null)
+  }, [])
   const lock = useCallback(() => {
-    if (!fine) return
-    patchWorld({ locked: true })
-    engine.current?.setPointer(null)
-    document.documentElement.classList.add('captured')
+    const el = canvas.current
+    if (!fine || !el) return
+    if (!('requestPointerLock' in el)) return setCaptured(true)
     try {
-      const req = canvas.current?.requestPointerLock() as Promise<void> | undefined
+      const req = el.requestPointerLock() as Promise<void> | undefined
       req?.catch?.(() => {})
     } catch {
-      // refused: the fallback above still turns the view
+      // refused: stay free until the next click or V
     }
-  }, [fine])
+  }, [fine, setCaptured])
   const unlock = useCallback(() => {
-    patchWorld({ locked: false })
-    document.documentElement.classList.remove('captured')
     if (document.pointerLockElement) document.exitPointerLock()
-  }, [])
+    else setCaptured(false)
+  }, [setCaptured])
   useEffect(() => {
-    // The browser lets go of the mouse on Esc: treat that as freeing the cursor.
-    const onChange = () => {
-      if (!document.pointerLockElement && worldStore.get().locked) unlock()
-    }
+    const onChange = () => setCaptured(document.pointerLockElement === canvas.current)
     document.addEventListener('pointerlockchange', onChange)
     return () => {
       document.removeEventListener('pointerlockchange', onChange)
       document.documentElement.classList.remove('captured')
     }
-  }, [unlock])
+  }, [setCaptured])
 
   // ---- reading things up close pauses the walk ----
   const reading = location.pathname.startsWith('/notes/') || state.sticky !== null
@@ -261,9 +263,7 @@ export function World() {
     drag.current = null
     if (!e || worldStore.get().mode !== 'play') return
     if (worldStore.get().locked) {
-      // captured: a click uses whatever the crosshair is on (and upgrades to
-      // real pointer lock, if the browser refused it before)
-      if (!document.pointerLockElement && ev.pointerType === 'mouse') lock()
+      // captured: a click uses whatever the crosshair is on
       return activate(e.currentAim())
     }
     if (!d || d.moved > 8 || performance.now() - d.at > 500) return
@@ -511,7 +511,7 @@ function Keys({ locked }: { locked: boolean }) {
       <span className="mr-2 inline-block border border-fg/50 px-1.5 leading-tight text-fg">
         v
       </span>
-      {locked ? 'unlock cursor' : 'lock cursor'}
+      {locked ? 'unlock cursor' : 'lock cursor (or click)'}
     </p>
   )
 }
