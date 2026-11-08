@@ -14,6 +14,18 @@ export const copy = {
     backUp: 'back to the gate',
     credit: 'built with react, three.js & too many candles',
   },
+  /**
+   * What you think to yourself, shown as a subtitle the first time you see
+   * something (or do something) in the churchyard.
+   */
+  lines: {
+    discord: "That doesn't belong here.",
+    nowPlaying: 'Another one.',
+    walkman: 'Still warm.',
+    coin: 'For good luck.',
+  },
+  /** The out-of-bounds message. */
+  lost: "you're not supposed to be here.",
 }
 
 export type SectionCopy = (typeof copy.sections)[keyof typeof copy.sections]

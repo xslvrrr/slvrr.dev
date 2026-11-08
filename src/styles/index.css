@@ -240,29 +240,73 @@
     text-shadow: 0.05em 0.05em 0 rgb(0 0 0 / 0.9);
   }
 
-  /* The reading panel: under the thing you're looking at on phones, beside it
-     on wide screens (the engine shifts the view to match, at 900px). */
-  .reader {
-    inset: 34svh 0.5rem 0.5rem;
+  /* A sticky note from the shrine's fence, up close. */
+  .sticky-note {
+    background:
+      linear-gradient(to bottom, rgb(0 0 0 / 0.08) 0 10%, transparent 10%),
+      repeating-linear-gradient(
+        to bottom,
+        transparent 0 2.1rem,
+        rgb(90 70 20 / 0.12) 2.1rem 2.2rem
+      ),
+      #e3cf6a;
+    box-shadow:
+      6px 8px 0 rgb(0 0 0 / 0.55),
+      inset 0 -18px 30px rgb(120 90 20 / 0.18);
+    font-family: var(--font-sans);
   }
-  @media (min-width: 640px) {
-    .reader {
-      inset-inline: 1.5rem;
-    }
+
+  /* Out of bounds: the line of text, shaking a little, and the glitch that ends it. */
+  .lost-text {
+    text-shadow:
+      2px 0 rgb(255 40 40 / 0.35),
+      -2px 0 rgb(40 200 255 / 0.25);
+    animation: lost-jitter 0.18s steps(2) infinite;
   }
-  @media (min-width: 900px) {
-    .reader {
-      inset: 11vh 4vw 6vh auto;
-      width: min(44rem, 48vw);
-      padding-inline: 2rem;
-    }
+  .lost-glitch {
+    animation: lost-tear 0.09s steps(1) infinite;
+    text-shadow:
+      8px 0 rgb(255 0 60 / 0.8),
+      -8px 0 rgb(0 220 255 / 0.8);
+  }
+  .lost-tear {
+    background:
+      repeating-linear-gradient(
+        to bottom,
+        rgb(255 255 255 / 0.12) 0 2px,
+        transparent 2px 7px,
+        rgb(0 0 0 / 0.6) 7px 13px
+      ),
+      linear-gradient(90deg, rgb(255 0 60 / 0.15), rgb(0 220 255 / 0.15));
+    animation: lost-tear 0.07s steps(1) infinite;
+    mix-blend-mode: screen;
   }
 
   /* The reading panel's scrollbar: a thin bone bar in a dark groove. */
-  .reader,
   [data-reader] {
     scrollbar-width: thin;
     scrollbar-color: var(--color-fg-faint) transparent;
+  }
+}
+
+@keyframes lost-jitter {
+  50% {
+    transform: translate(1px, -1px);
+  }
+}
+
+@keyframes lost-tear {
+  25% {
+    transform: translate(-14px, 3px) skewX(-8deg);
+    clip-path: inset(10% 0 55% 0);
+  }
+  50% {
+    transform: translate(10px, -4px);
+    clip-path: inset(40% 0 20% 0);
+  }
+  75% {
+    transform: translate(-6px, 0) scaleY(1.2);
+    clip-path: inset(70% 0 5% 0);
   }
 }
 

@@ -331,11 +331,19 @@ export function lettering(
   canvas.width = w
   canvas.height = h
   const ctx = canvas.getContext('2d')!
-  ctx.font = `${size}px ${font}`
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   ctx.fillStyle = '#fff'
-  ctx.fillText(text, w / 2, h / 2 + 1)
+  // several lines: the first at `size`, the rest smaller, centred as a block
+  const lines = text.split('\n')
+  const sizes = lines.map((_, i) => (i === 0 ? size : Math.round(size * 0.72)))
+  const total = sizes.reduce((a, b) => a + b * 1.05, 0)
+  let y = h / 2 - total / 2
+  lines.forEach((line, i) => {
+    ctx.font = `${sizes[i]}px ${font}`
+    ctx.fillText(line, w / 2, y + (sizes[i] * 1.05) / 2 + 1)
+    y += sizes[i] * 1.05
+  })
   const mask = ctx.getImageData(0, 0, w, h).data
 
   const r = rng(grain)
@@ -355,4 +363,80 @@ export function lettering(
       p.set(x, y, c)
     }
   return p.texture(false)
+}
+
+/** A sticky note: yellowed paper, a number in the corner, lines of scribble. */
+export function sticky(n: number) {
+  const r = rng(200 + n)
+  const p = new Paint(24, 24)
+  for (let y = 0; y < 24; y++)
+    for (let x = 0; x < 24; x++)
+      p.set(x, y, mix(hex('#d8c45e'), hex('#c4ad48'), y / 24 + r() * 0.15))
+  // a darker sticky strip along the top
+  for (let x = 0; x < 24; x++)
+    for (let y = 0; y < 4; y++)
+      p.set(x, y, mix(hex('#b8a03e'), hex('#d0bb55'), r() * 0.3))
+  // scribbled lines of handwriting
+  for (let line = 0; line < 5; line++) {
+    const y = 9 + line * 3
+    let x = 3
+    const end = 18 + r() * 4
+    while (x < end) {
+      if (r() < 0.8) p.set(x, y + (r() < 0.3 ? 1 : 0), hex('#3b3420'))
+      x += 1
+    }
+  }
+  // the number, as pixels in the top-left
+  const digits: Record<string, string[]> = {
+    '1': ['010', '110', '010', '010', '111'],
+    '2': ['110', '001', '010', '100', '111'],
+    '3': ['110', '001', '010', '001', '110'],
+    '4': ['101', '101', '111', '001', '001'],
+    '5': ['111', '100', '110', '001', '110'],
+    '6': ['011', '100', '110', '101', '010'],
+    '7': ['111', '001', '010', '010', '010'],
+    '8': ['010', '101', '010', '101', '010'],
+    '9': ['010', '101', '011', '001', '110'],
+  }
+  const d = digits[String(n)] ?? digits['1']
+  d.forEach((row, y) =>
+    [...row].forEach((c, x) => c === '1' && p.set(19 + x, 7 + y, hex('#7a2020'))),
+  )
+  return p.texture(false)
+}
+
+/** A folded sheet of paper left on a grave. */
+export function paper(seed: number) {
+  const r = rng(300 + seed)
+  const p = new Paint(16, 20)
+  for (let y = 0; y < 20; y++)
+    for (let x = 0; x < 16; x++) {
+      let c = mix(hex('#cfc8b6'), hex('#a9a291'), r() * 0.4 + (x === 8 ? 0.4 : 0))
+      if (y > 3 && y < 17 && x > 2 && x < 14 && y % 3 === 0 && r() < 0.8)
+        c = hex('#4a4538')
+      p.set(x, y, c)
+    }
+  return p.texture(false)
+}
+
+/**
+ * An album cover, shrunk to a few dozen pixels so it sits in the world like
+ * everything else (or a flat swatch, for covers that are just a colour).
+ */
+export function cover(url: string | null, swatch?: string) {
+  const canvas = document.createElement('canvas')
+  canvas.width = canvas.height = 40
+  const ctx = canvas.getContext('2d')!
+  ctx.fillStyle = swatch ?? '#2a2a2e'
+  ctx.fillRect(0, 0, 40, 40)
+  const t = finish(new THREE.CanvasTexture(canvas), false)
+  if (url && !swatch) {
+    const img = new Image()
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, 40, 40)
+      t.needsUpdate = true
+    }
+    img.src = url
+  }
+  return t
 }

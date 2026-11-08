@@ -12,6 +12,8 @@ import { soundStore } from './store'
  */
 let ctx: AudioContext | null = null
 let master: GainNode | null = null
+/** Everything except UI sounds goes through here, so it can be cut dead. */
+let world: GainNode | null = null
 let noise: AudioBuffer | null = null
 let brown: AudioBuffer | null = null
 let steps: AudioBuffer[] = []
@@ -27,6 +29,8 @@ function ensure() {
   comp.threshold.value = -10
   comp.ratio.value = 6
   master.connect(comp).connect(ctx.destination)
+  world = ctx.createGain()
+  world.connect(master)
   noise = makeNoise(ctx, 3, 'white')
   brown = makeNoise(ctx, 6, 'brown')
   steps = Array.from({ length: 8 }, (_, i) => makeStep(ctx!, i))
@@ -153,7 +157,7 @@ function play(
   for (const f of filters) node = node.connect(f)
   const p = a.createStereoPanner()
   p.pan.value = pan
-  node.connect(g).connect(p).connect(master)
+  node.connect(g).connect(p).connect(world!)
   src.start(a.currentTime + at)
   return { src, gain: g }
 }
@@ -187,7 +191,7 @@ function tone(
   g.gain.setValueAtTime(0, t)
   g.gain.linearRampToValueAtTime(gain, t + attack)
   g.gain.exponentialRampToValueAtTime(0.0001, t + dur)
-  osc.connect(g).connect(p).connect(master)
+  osc.connect(g).connect(p).connect(world!)
   osc.start(t)
   osc.stop(t + dur + 0.05)
 }
@@ -248,7 +252,7 @@ function startBed(a: AudioContext) {
   const windFilter = filter('bandpass', 420, 0.6)
   const wind = a.createGain()
   wind.gain.value = 0
-  loop(brown).connect(windFilter).connect(wind).connect(master)
+  loop(brown).connect(windFilter).connect(wind).connect(world!)
   // rain: hiss, high and soft
   const rain = a.createGain()
   rain.gain.value = 0
@@ -256,12 +260,12 @@ function startBed(a: AudioContext) {
     .connect(filter('highpass', 1400))
     .connect(filter('lowpass', 7000))
     .connect(rain)
-    .connect(master)
+    .connect(world!)
   // a low drone, two sines beating slowly against each other
   const drone = a.createGain()
   drone.gain.value = 0
   const lp = filter('lowpass', 260)
-  lp.connect(drone).connect(master)
+  lp.connect(drone).connect(world!)
   for (const [f, type, lvl] of [
     [48.9, 'sine', 1],
     [49.25, 'sine', 1],
@@ -321,7 +325,7 @@ function startBed(a: AudioContext) {
         g.gain.setValueAtTime(0, t)
         g.gain.linearRampToValueAtTime(0.012, t + 0.05)
         g.gain.exponentialRampToValueAtTime(0.0001, t + (i === 0 ? 0.45 : 0.6))
-        o.connect(g).connect(p).connect(master!)
+        o.connect(g).connect(p).connect(world!)
         o.start(t)
         o.stop(t + 0.7)
       })
@@ -344,7 +348,103 @@ function applyWeather() {
   bed.wind.gain.setTargetAtTime(0.05 + weather.wind * 0.1, t, 1.5)
 }
 
+/** A short burst of noise played straight to the output (bypasses the silence). */
+function burst(at: number, dur: number, gain: number, freq: number, q = 0.8) {
+  const a = audio()
+  if (!a || !master || !noise) return
+  const src = a.createBufferSource()
+  src.buffer = noise
+  const f = filter('bandpass', freq, q)
+  const g = a.createGain()
+  const t = a.currentTime + at
+  g.gain.setValueAtTime(gain, t)
+  g.gain.setValueAtTime(0, t + dur)
+  src.connect(f).connect(g).connect(master)
+  src.start(t, Math.random() * 2)
+  src.stop(t + dur + 0.02)
+}
+
 export const sfx = {
+  /** A coin flicked off a thumb: a bright ting as it spins away. */
+  coin() {
+    tone(2650, 0, 0.35, 0.02, 'sine', 0.002)
+    tone(3980, 0.005, 0.25, 0.01, 'sine', 0.002)
+    tone(5200, 0.01, 0.12, 0.005, 'triangle', 0.002)
+  },
+  /** A small splash: a plop, then droplets. */
+  splash() {
+    const a = audio()
+    if (!a || !noise) return
+    const o = a.createOscillator()
+    const g = a.createGain()
+    const t = a.currentTime
+    o.frequency.setValueAtTime(900, t)
+    o.frequency.exponentialRampToValueAtTime(260, t + 0.08)
+    g.gain.setValueAtTime(0.05, t)
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12)
+    o.connect(g).connect(world!)
+    o.start(t)
+    o.stop(t + 0.15)
+    const s = play(noise, { gain: 0, filters: [filter('bandpass', 1800, 0.7)] })
+    if (s) {
+      s.gain.gain.setValueAtTime(0.12, t)
+      s.gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.35)
+      s.src.stop(t + 0.4)
+    }
+    for (let i = 0; i < 6; i++)
+      tone(
+        1400 + Math.random() * 1800,
+        0.08 + Math.random() * 0.35,
+        0.05,
+        0.006,
+        'sine',
+        0.002,
+      )
+  },
+  /** Picking something up: a rustle and a soft plastic knock. */
+  pickup() {
+    sfx.turn()
+    tone(320, 0.05, 0.08, 0.03, 'square', 0.002)
+    tone(180, 0.07, 0.1, 0.02, 'triangle', 0.002)
+  },
+  /** A walkman's mechanical button: clunk, and the motor catching. */
+  walkman() {
+    tone(140, 0, 0.06, 0.05, 'square', 0.001)
+    tone(2200, 0, 0.02, 0.01, 'square', 0.001)
+    tone(90, 0.06, 0.2, 0.012, 'sawtooth', 0.02)
+  },
+  /** Digital glitch: torn noise and a pitch-wrecked square wave, straight to the output. */
+  glitch() {
+    const a = audio()
+    if (!a || !master) return
+    for (let i = 0; i < 9; i++)
+      burst(
+        i * 0.055 + Math.random() * 0.02,
+        0.03 + Math.random() * 0.05,
+        0.25,
+        400 + Math.random() * 5000,
+        1.5,
+      )
+    const o = a.createOscillator()
+    const g = a.createGain()
+    const t = a.currentTime
+    o.type = 'square'
+    o.frequency.setValueAtTime(80, t)
+    for (let i = 1; i < 10; i++)
+      o.frequency.setValueAtTime(60 + Math.random() * 900, t + i * 0.05)
+    g.gain.setValueAtTime(0.05, t)
+    g.gain.setValueAtTime(0, t + 0.5)
+    o.connect(g).connect(master)
+    o.start(t)
+    o.stop(t + 0.55)
+  },
+  /** Cut every sound in the world dead (true), or bring it back (false). */
+  silence(on: boolean) {
+    if (!ctx || !world) return
+    world.gain.cancelScheduledValues(ctx.currentTime)
+    if (on) world.gain.setValueAtTime(0, ctx.currentTime)
+    else world.gain.setTargetAtTime(1, ctx.currentTime, 0.6)
+  },
   /** A church bell tolls (the gate, and the end of "ascend"). */
   enter() {
     bell(196, 0, 0.05)
@@ -463,7 +563,7 @@ export const sfx = {
     g.gain.exponentialRampToValueAtTime(0.08 * loud, t + 0.5)
     g.gain.linearRampToValueAtTime(0.11 * loud, t + 1.1)
     g.gain.exponentialRampToValueAtTime(0.0001, t + 3.6)
-    src.connect(lp).connect(g).connect(master)
+    src.connect(lp).connect(g).connect(world!)
     src.start(t)
     src.stop(t + 3.8)
   },

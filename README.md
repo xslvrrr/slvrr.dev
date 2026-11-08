@@ -23,20 +23,20 @@ npm run format     # prettier
 
 ## Where to change what
 
-| I want to change…                   | Edit                                             |
-| ----------------------------------- | ------------------------------------------------ |
-| Name, tagline, bio, rotating words  | `src/content/profile.ts`                         |
-| Social links (and dock order)       | `src/content/links.ts`                           |
-| Projects                            | `src/content/projects.ts`                        |
-| Timeline                            | `src/content/timeline.ts`                        |
-| Favourite albums / games / shows    | `src/content/media.ts`, then `npm run covers`    |
-| Section headings, footer lines      | `src/content/copy.ts`                            |
-| Write a note                        | add `src/content/notes/<slug>.mdx` with a `meta` |
-| Colors, fonts, radii, easing        | `src/styles/tokens.css`                          |
-| The path, places, weather per place | `src/world/stations.ts`                          |
-| The churchyard itself               | `src/world/build.ts`                             |
-| Statues                             | `src/world/sprites.ts`                           |
-| Sounds                              | `src/lib/sfx.ts`                                 |
+| I want to change…                  | Edit                                             |
+| ---------------------------------- | ------------------------------------------------ |
+| Name, tagline, bio, rotating words | `src/content/profile.ts`                         |
+| Social links (and dock order)      | `src/content/links.ts`                           |
+| Projects                           | `src/content/projects.ts`                        |
+| Timeline                           | `src/content/timeline.ts`                        |
+| Favourite albums / games / shows   | `src/content/media.ts`, then `npm run covers`    |
+| Section headings, footer lines     | `src/content/copy.ts`                            |
+| Write a note                       | add `src/content/notes/<slug>.mdx` with a `meta` |
+| Colors, fonts, radii, easing       | `src/styles/tokens.css`                          |
+| Floor plan, signposts, weather     | `src/world/layout.ts`                            |
+| The churchyard itself              | `src/world/build.ts`                             |
+| Statues                            | `src/world/sprites.ts`                           |
+| Sounds                             | `src/lib/sfx.ts`                                 |
 
 All copy lives in `src/content/`. The bio and section headings are drafts, so rewrite them freely.
 
@@ -51,55 +51,62 @@ cover show a generated tile. Covers sit in 3D jewel cases (`src/fx/JewelCase.tsx
 ### The churchyard
 
 The whole site is one fixed, full-screen three.js scene (`src/world/`). There is no page scroll.
+Every visit starts at the closed gate; click to push it open and walk in.
 
-**Walking.** The path (`PATH` in `src/world/stations.ts`) runs from outside the gate to the foot
-of the calvary, with stations along it. Click either **wedge** at the edges of the screen (they
-point in towards the vanishing point, like the hedges) to walk on to the next station; the low one
-at the bottom turns you back. Scrolling, `W`/`S` and the arrow keys work too. The camera glides
-round the corners, bobs with each stride, and every stride plays a footstep.
+**Moving.** `WASD` or the arrow keys walk, `Shift` runs, the mouse looks around (it's captured
+when you go through the gate; **`V`** frees or recaptures it, as the hint bottom-left says). With
+the cursor free you can also drag to look and click things directly. On touch screens there's a
+thumbstick bottom-left (push it all the way to run), dragging anywhere else looks around, and
+tapping something uses it. `E` (or a click, or the on-screen button on phones) uses whatever the
+crosshair is on; a card above the prompt says what it is.
 
-**Looking.** Most stations have a point of interest beside the path. Hover it for its label, click
-it (or press `E`) and you turn to face it while its section opens in a panel beside it (below it
-on phones). `Esc`, "step back" or clicking the world turns you back to the path. The URL hash
-follows what you're looking at, so `/#work` walks you to the mausoleum and back/forward work.
+**The floor plan** (`layout.ts`) is a grid of 0.5 m cells (`grid.ts`): open ground, hedge, solid
+objects, the wall, and out of bounds. Hedges are grown in every solid cell next to open ground, and
+the same grid does collision and line of sight. The walk has four junctions; at each, the trail
+turns and a straight branch runs on to a dead end, and a signpost points the way. One dead end has
+a gap in the hedge. Squeeze through and the screen cuts to black, everything goes silent, and
+after three seconds: _you're not supposed to be here._ Then a glitch, and you're back at the gate.
 
-| Station   | Point of interest                           | Section                     |
-| --------- | ------------------------------------------- | --------------------------- |
-| gate      | the iron garden gates (title screen)        | name, tagline, roles        |
-| entry     | the hedge walk                              | (none)                      |
-| sign      | a signpost on the left, before the 1st turn | Links + Discord             |
-| fountain  | a fountain with a cherub, in a clearing     | Music                       |
-| mausoleum | where the relics are kept                   | Work                        |
-| shrine    | a Madonna in a niche, candles, a monk       | About                       |
-| graves    | a weeping angel on a tomb                   | Notes                       |
-| calvary   | a tall cross between two angels             | Footer ("back to the gate") |
+**The places** (each section is something you walk up to and use):
 
-Each station also sets the **weather** around it (rain, fog density, lightning per minute, wind),
-blended as you walk. Notes (`/notes/:slug`) open as a reading panel with the world behind, at the
-graves.
+| Place          | What's there                                                                                                                                            |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| the gate       | wrought-iron garden gates; your name, tagline and roles (the title screen)                                                                              |
+| the signpost   | an arrow per link (use one to open it) and a floating CRT with live Discord                                                                             |
+| the fountain   | album jewel cases in the grass, a screen with Last.fm now playing, a walkman to pick up and carry (`F` plays along), and `E` at the water throws a coin |
+| the mausoleum  | a monument per project (obelisk, stele, broken column, sarcophagus)                                                                                     |
+| the shrine     | the bio and timeline as numbered sticky notes on the fence; use one to read it up close (`A`/`D` for the next)                                          |
+| the old graves | a grave per note with its title and date, and the note at its foot to pick up                                                                           |
+| the calvary    | the end of the path: a great cross between four angels                                                                                                  |
+
+New notes get new graves automatically (columns of five, growing westwards). Projects, links,
+albums and sticky notes all come from `src/content/`.
+
+**Lines.** The first time you see the floating monitor, the now-playing screen or the walkman, or
+when you throw a coin, you say something to yourself as a subtitle (`copy.lines` in
+`src/content/copy.ts`).
 
 **How it looks.** `src/world/engine.ts` renders the scene at ~260 rows (one scene pixel is 2–4 CSS
 pixels), then a post pass (`post.ts`) quantizes it with an ordered dither, adds a vignette and
 grain, and the canvas is scaled up with nearest-neighbour. Vertices snap to a coarse screen grid
 (`materials.ts`), so geometry wobbles very slightly, PS1-style. Textures are painted pixel by pixel
-at load (`textures.ts`), including the lettering on the signs. Statues are the pixel-art sprites in
-`sprites.ts`, extruded into voxel sculptures that swell towards the middle (`voxel.ts`). You carry a
-lantern (a flickering light at your hip); the nearest lamps and candles share a small pool of real
-lights. Sky, clouds, moon and rain are shaders in `sky.ts`.
+at load (`textures.ts`), including the lettering on signs, plaques and graves; the live screens
+are canvases redrawn when their data changes (`screens.ts`). Statues are the pixel-art sprites in
+`sprites.ts`, extruded into voxel sculptures (`voxel.ts`). You carry a lantern; the nearest lamps
+and candles share a small pool of real lights. Sky, clouds, moon and rain are shaders in `sky.ts`.
+Each place sets its own weather (`zones` in `layout.ts`), blended as you walk.
 
-**Type.** **Jersey 10** (a chunky pixel face) for display, **Pixelify Sans** for reading and
-**VT323** for labels and prompts, like a game's subtitles: all bone on ink, so text stays legible
-over the dark scene.
+**Type.** **Jersey 10** for display, **Pixelify Sans** for reading and **VT323** for labels,
+prompts and subtitles: all bone on ink, so text stays legible over the dark scene.
 
 **Sound.** Everything is synthesized in `src/lib/sfx.ts`: footsteps in wet grass (heel strike, toe
-roll, blades snapping), the gate's groaning hinges and clank, cloth rustling as you turn, thunder,
-and an ambience bed of wind gusts, rain, a low drone, crickets, and now and then an owl or the far
-cathedral bell. It starts when you push the gate open (that click is what lets the browser play
-audio). The **sound** toggle is in the HUD.
+roll, blades snapping), the gate's hinges, cloth rustling, the coin and its splash, the walkman's
+buttons, the out-of-bounds glitch, thunder, and an ambience bed of wind, rain, a low drone,
+crickets, an owl and a far bell. The sound toggle is the speaker bottom-right.
 
 Without WebGL, the site falls back to a plain page with the same sections (`src/pages/Plain.tsx`).
-In `npm run dev`, `window.engine` is the running engine, and `strike()` from `src/lib/storm.ts`
-calls down lightning (so does clicking the open sky).
+In `npm run dev`, `window.engine` is the running engine (set `engine.x`, `engine.z`, `engine.yaw`
+to jump around), and clicking the open sky calls down lightning.
 
 ### Performance budget
 
@@ -111,6 +118,8 @@ calls down lightning (so does clicking the open sky).
 - The render loop skips frames while the tab is hidden. three.js is loaded lazily, in its own
   chunk, while the title screen shows.
 - Changing the number of lights recompiles every shader: the light pool is a fixed size (`POOL`).
+- Anything you can use is an invisible box in `world.hits` (`userData.kind`); aiming is one
+  raycast against those per frame, plus a line-of-sight check on the grid.
 - Avoid `backdrop-filter` and big `filter: blur()` layers over the canvas; panels are solid.
 
 ## Live integrations
@@ -155,12 +164,12 @@ to the SPA so `/notes/...` links work.
 
 ```
 api/            Vercel functions (lastfm, github, preview, audio)
-src/world/      the 3D churchyard: engine, layout (stations), build, textures, voxels, sky, post,
-                and its React overlays (World, GateTitle, Reader)
+src/world/      the 3D churchyard: engine, layout + grid, build + parts, textures, screens, voxels,
+                sky, post, and its React overlays (World, GateTitle, Cards, StickyZoom, Lost)
 src/content/    all copy and data, typed, with no JSX
 src/sections/   the content of each place (Links, NowPlaying, Projects, About, Notes, Footer)
-src/pages/      NotePage (a note over the world) and Plain (the no-WebGL fallback)
-src/components/ Nav (the HUD), GlitchHandle, MiniPlayer, PixelCross, Icon…
+src/pages/      NotePage (a note you've picked up) and Plain (the no-WebGL fallback)
+src/components/ MiniPlayer (fallback page only), PixelCross, Icon…
 src/fx/         effects: Cursor, JewelCase, ScrambleText, ScanReveal, Resurface, TiltCard…
 src/hooks/      useLanyard, useVisualizer, usePauseOffscreen, useRepoStats, useKonami, useFinePointer
 src/lib/        global stores (Last.fm feed, player), lightning bus, sfx, helpers

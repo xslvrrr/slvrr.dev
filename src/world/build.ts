@@ -1,116 +1,104 @@
 import * as THREE from 'three'
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
 import { links } from '@/content/links'
+import { media } from '@/content/media'
+import { notes } from '@/content/notes'
+import { profile } from '@/content/profile'
+import { projects } from '@/content/projects'
+import { timeline } from '@/content/timeline'
+import { coverPath } from '@/lib/covers'
+import { Cell, CELL, type Grid } from './grid'
+import {
+  buildGrid,
+  CALVARY,
+  FOUNTAIN,
+  GATE_Z,
+  MAUSOLEUM,
+  MONITOR,
+  PATH,
+  SHRINE,
+  SIGN,
+  signposts,
+  type V2,
+} from './layout'
 import { basic, lambert } from './materials'
+import {
+  block,
+  boxGeo,
+  buildGate,
+  cathedral,
+  createMist,
+  cypress,
+  deadTree,
+  grave,
+  lamp,
+  mergeGeos,
+  mergeStatic,
+  mesh,
+  statue,
+  tile,
+  type Mats,
+} from './parts'
 import { buildWalk, yawTo, type Walk } from './path'
-import type { SpriteName } from './sprites'
-import { GATE_Z, PATH, stations, type V2 } from './stations'
+import { createScreens, type Screens } from './screens'
 import * as tex from './textures'
-import { voxelGeometry } from './voxel'
 
 /**
- * Builds the churchyard: ground and the worn trail, clipped hedges lining the
- * walk (the walls you see converging ahead of you), the iron garden gate,
- * and one landmark per station: signpost, fountain, mausoleum, shrine,
- * graves, calvary, with the cathedral looming over everything.
+ * Builds the churchyard on the floor plan from layout.ts: hedges grown along
+ * every open edge, the trail, the gate, signposts at the junctions, and each
+ * section as things you can walk up to and use.
  */
+
+/** What you can aim at and use (each has an invisible hit box). */
+export type Kind =
+  | 'link'
+  | 'discord'
+  | 'album'
+  | 'nowplaying'
+  | 'walkman'
+  | 'fountain'
+  | 'project'
+  | 'sticky'
+  | 'note'
+
 export interface World {
   scene: THREE.Scene
   walk: Walk
-  /** Invisible boxes that catch clicks on each station's point of interest. */
+  grid: Grid
   hits: THREE.Mesh[]
   gate: { left: THREE.Object3D; right: THREE.Object3D }
-  /** Textures whose offset scrolls (falling water). */
   flowing: THREE.Texture[]
-  /** Flames to flicker. */
   flames: THREE.Object3D[]
-  /** Where lamps and candles are, for the pool of real point lights. */
   lamps: THREE.Vector3[]
-  /** Drifting ground mist. */
   mist: ReturnType<typeof createMist>
-  /** Materials that follow the blood moon. */
   glassMats: THREE.MeshBasicMaterial[]
-  /** What blocks your line of sight to a point of interest (the hedges). */
-  occluders: THREE.Object3D[]
-}
-
-type Mat = THREE.Material
-
-/** A box whose UVs tile its texture every `tile` metres on every face. */
-function boxGeo(w: number, h: number, d: number, tile = 1) {
-  const g = new THREE.BoxGeometry(w, h, d)
-  const uv = g.attributes.uv as THREE.BufferAttribute
-  const dims: [number, number][] = [
-    [d, h],
-    [d, h],
-    [w, d],
-    [w, d],
-    [w, h],
-    [w, h],
-  ]
-  for (let f = 0; f < 6; f++)
-    for (let v = 0; v < 4; v++) {
-      const i = f * 4 + v
-      uv.setXY(i, (uv.getX(i) * dims[f][0]) / tile, (uv.getY(i) * dims[f][1]) / tile)
-    }
-  return g
-}
-
-/** Scales a geometry's UVs so its texture repeats (cylinders, cones). */
-function tile<T extends THREE.BufferGeometry>(geo: T, u: number, v: number): T {
-  const uv = geo.attributes.uv as THREE.BufferAttribute
-  for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * u, uv.getY(i) * v)
-  return geo
-}
-
-function mesh(
-  parent: THREE.Object3D,
-  geo: THREE.BufferGeometry,
-  mat: Mat | Mat[],
-  x = 0,
-  y = 0,
-  z = 0,
-  ry = 0,
-) {
-  const m = new THREE.Mesh(geo, mat)
-  m.position.set(x, y, z)
-  m.rotation.y = ry
-  parent.add(m)
-  return m
-}
-
-/** A box sitting on y (its base at y). */
-function block(
-  parent: THREE.Object3D,
-  mat: Mat | Mat[],
-  w: number,
-  h: number,
-  d: number,
-  x: number,
-  y: number,
-  z: number,
-  ry = 0,
-  tile = 1,
-) {
-  return mesh(parent, boxGeo(w, h, d, tile), mat, x, y + h / 2, z, ry)
+  screens: Screens
+  /** Things that hover and sway (the monitor that shouldn't be there). */
+  floaters: { obj: THREE.Object3D; y: number; yaw: number }[]
+  /** The walkman, until you pick it up. */
+  walkman: THREE.Group
+  /** Things that make you say something the first time you see them. */
+  sights: { line: 'discord' | 'nowPlaying' | 'walkman'; at: THREE.Vector3 }[]
 }
 
 export function buildWorld(): World {
   const scene = new THREE.Scene()
-  const walk = buildWalk()
+  const grid = buildGrid()
+  const walk = buildWalk(PATH)
   const flowing: THREE.Texture[] = []
   const flames: THREE.Object3D[] = []
   const lamps: THREE.Vector3[] = []
   const glassMats: THREE.MeshBasicMaterial[] = []
-  const occluders: THREE.Object3D[] = []
+  const hits: THREE.Mesh[] = []
+  const floaters: World['floaters'] = []
+  const sights: World['sights'] = []
+  const screens = createScreens()
   const rand = tex.rng(7)
 
   // ---- materials ----
-  const grassTex = tex.grass()
-  const M = {
-    grass: lambert({ map: grassTex }),
+  const M: Mats = {
+    grass: lambert({ map: tex.grass() }),
     trail: lambert({ map: tex.trail() }),
-    hedge: lambert({ map: tex.hedge() }),
+    hedge: hedgeMaterial(),
     stone: lambert({ map: tex.stone() }),
     darkStone: lambert({ map: tex.stone(53, '#2f2f2c') }),
     marble: lambert({ map: tex.marble() }),
@@ -130,155 +118,48 @@ export function buildWorld(): World {
     glassMats.push(m)
     return m
   }
+  const plasticMat = lambert({ color: 0x24252a })
+  const hitMat = new THREE.MeshBasicMaterial({ visible: false })
 
-  // ---- ground ----
-  const groundGeo = new THREE.PlaneGeometry(260, 260)
-  groundGeo.rotateX(-Math.PI / 2)
-  const guv = groundGeo.attributes.uv as THREE.BufferAttribute
-  for (let i = 0; i < guv.count; i++) guv.setXY(i, guv.getX(i) * 65, guv.getY(i) * 65)
-  mesh(scene, groundGeo, M.grass, 8, 0, -30)
+  /** An invisible box that can be aimed at and used. */
+  const hit = (
+    kind: Kind,
+    index: number,
+    at: THREE.Vector3Like,
+    half: [number, number, number],
+    range = 3.2,
+    rotY = 0,
+  ) => {
+    const m = new THREE.Mesh(
+      new THREE.BoxGeometry(half[0] * 2, half[1] * 2, half[2] * 2),
+      hitMat,
+    )
+    m.position.set(at.x, at.y, at.z)
+    m.rotation.y = rotY
+    m.userData = { hit: true, kind, index, range }
+    scene.add(m)
+    hits.push(m)
+    return m
+  }
 
-  // ---- the trail ----
+  // ---- ground and the trail ----
   {
-    const pts: [number, number][] = [[0, 22], [0, 16], ...walk.points]
-    const pos: number[] = []
-    const uv: number[] = []
-    const idx: number[] = []
-    let s = 0
-    for (let i = 0; i < pts.length; i++) {
-      const a = pts[Math.max(0, i - 1)]
-      const b = pts[Math.min(pts.length - 1, i + 1)]
-      const dx = b[0] - a[0]
-      const dz = b[1] - a[1]
-      const l = Math.hypot(dx, dz) || 1
-      const rx = -dz / l
-      const rz = dx / l
-      if (i > 0) s += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1])
-      const half = 1.0
-      pos.push(pts[i][0] - rx * half, 0.012, pts[i][1] - rz * half)
-      pos.push(pts[i][0] + rx * half, 0.012, pts[i][1] + rz * half)
-      uv.push(s / 4, 0, s / 4, 1)
-      if (i > 0) {
-        const k = i * 2
-        idx.push(k - 2, k - 1, k, k - 1, k + 1, k)
-      }
-    }
-    const g = new THREE.BufferGeometry()
-    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
-    g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2))
-    g.setIndex(idx)
-    g.computeVertexNormals()
-    mesh(scene, g, M.trail)
+    const g = new THREE.PlaneGeometry(300, 300).rotateX(-Math.PI / 2)
+    tile(g, 75, 75)
+    mesh(scene, g, M.grass, 8, 0, -30)
   }
+  trailRibbon(scene, walk, M.trail)
+  // paving in the yard and before the calvary
+  pave(scene, M.darkStone, 23, -37, 39, -23)
+  pave(scene, M.darkStone, -15, -77, 7, -60.5)
 
-  // ---- hedges ----
-  const hedgeBlocks: { x: number; z: number; ry: number; h: number; len: number }[] = []
-  const gaps: { x: number; z: number; r: number }[] = [
-    { x: 11, z: -20.4, r: 3.3 }, // fountain clearing
-    { x: 22.4, z: -30, r: 3.1 }, // mausoleum
-    { x: 9, z: -42.4, r: 2.3 }, // shrine
-    { x: -6.4, z: -52, r: 4.4 }, // graves
-  ]
-  const inGap = (x: number, z: number) =>
-    gaps.some((g) => Math.hypot(x - g.x, z - g.z) < g.r)
-  const run = (ax: number, az: number, bx: number, bz: number, gapsOn = true) => {
-    const len = Math.hypot(bx - ax, bz - az)
-    const n = Math.max(1, Math.round(len / 0.95))
-    for (let i = 0; i < n; i++) {
-      const t = (i + 0.5) / n
-      const x = ax + (bx - ax) * t
-      const z = az + (bz - az) * t
-      if (gapsOn && inGap(x, z)) continue
-      hedgeBlocks.push({
-        x,
-        z,
-        ry: Math.atan2(bx - ax, bz - az) + Math.PI / 2,
-        h: 2.2 + rand() * 0.35,
-        len: (len / n) * 1.12,
-      })
-    }
-  }
-  // Hedges either side of the walk, from just inside the wall to before the calvary.
-  {
-    const line: V2[] = [[0, GATE_Z - 0.6], ...PATH.slice(1, -1), [-4, -59]]
-    for (const side of [-1, 1]) {
-      const off: V2[] = line.map((p, i) => {
-        const a = line[Math.max(0, i - 1)]
-        const b = line[Math.min(line.length - 1, i + 1)]
-        // miter: average of the neighbouring segments' right-hand normals
-        const n1 = i > 0 ? rightOf(a, p) : rightOf(p, b)
-        const n2 = i < line.length - 1 ? rightOf(p, b) : rightOf(a, p)
-        let nx = n1[0] + n2[0]
-        let nz = n1[1] + n2[1]
-        const nl = Math.hypot(nx, nz)
-        nx /= nl
-        nz /= nl
-        const cos = nx * n1[0] + nz * n1[1]
-        const d = (2.4 * side) / cos
-        return [p[0] + nx * d, p[1] + nz * d]
-      })
-      for (let i = 1; i < off.length; i++)
-        run(off[i - 1][0], off[i - 1][1], off[i][0], off[i][1])
-    }
-  }
-  // Fountain clearing: a ring of hedge open towards the walk.
-  ring(11, -24.5, 5.3, (a) => Math.sin(a) > 0.74)
-  // Mausoleum yard, shrine alcove, graveyard: hedged on three sides.
-  run(22.4, -36, 34, -36, false)
-  run(34, -36, 34, -24, false)
-  run(34, -24, 22.4, -24, false)
-  run(6.4, -42.4, 6.4, -48.5, false)
-  run(6.4, -48.5, 11.6, -48.5, false)
-  run(11.6, -48.5, 11.6, -42.4, false)
-  run(-6.4, -44, -21, -44, false)
-  run(-21, -44, -21, -60, false)
-  run(-21, -60, -6.4, -60, false)
-
-  function ring(cx: number, cz: number, r: number, open: (a: number) => boolean) {
-    const n = Math.round((Math.PI * 2 * r) / 0.95)
-    for (let i = 0; i < n; i++) {
-      const a = (i / n) * Math.PI * 2
-      if (open(a)) continue
-      hedgeBlocks.push({
-        x: cx + Math.cos(a) * r,
-        z: cz + Math.sin(a) * r,
-        ry: -a - Math.PI / 2,
-        h: 2.2 + rand() * 0.35,
-        len: ((Math.PI * 2 * r) / n) * 1.15,
-      })
-    }
-  }
-  {
-    // UVs laid out for a typical 1 × 2.3 × 0.95 m block, then scaled to a unit
-    // cube, so the leaves aren't stretched once each instance is sized.
-    const geo = boxGeo(1, 2.3, 0.95, 1)
-    geo.scale(1, 1 / 2.3, 1 / 0.95)
-    geo.translate(0, 0.5, 0)
-    const inst = new THREE.InstancedMesh(geo, M.hedge, hedgeBlocks.length)
-    const m = new THREE.Matrix4()
-    const q = new THREE.Quaternion()
-    hedgeBlocks.forEach((b, i) => {
-      q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), b.ry)
-      m.compose(
-        new THREE.Vector3(b.x, 0, b.z),
-        q,
-        new THREE.Vector3(b.len, b.h, 0.95 + rand() * 0.12),
-      )
-      inst.setMatrixAt(i, m)
-    })
-    inst.computeBoundingSphere()
-    scene.add(inst)
-    occluders.push(inst)
-  }
-
-  // ---- the wall and the iron gate ----
+  // ---- the wall, the railings and the iron gate ----
   const gate = buildGate(scene, M, lamps, flames)
+  for (const side of [-1, 1]) {
+    block(scene, M.stone, 42, 0.7, 0.55, side * (2.6 + 21), 0, GATE_Z, 0, 2)
+    block(scene, M.stone, 42, 0.12, 0.7, side * (2.6 + 21), 0.7, GATE_Z, 0, 2)
+  }
   {
-    // low stone wall with railings, either side of the gate
-    for (const side of [-1, 1]) {
-      block(scene, M.stone, 42, 0.7, 0.55, side * (2.6 + 21), 0, GATE_Z, 0, 2)
-      block(scene, M.stone, 42, 0.12, 0.7, side * (2.6 + 21), 0.7, GATE_Z, 0, 2)
-    }
     const bars = new THREE.InstancedMesh(
       new THREE.BoxGeometry(0.035, 1.5, 0.035),
       M.iron,
@@ -293,9 +174,9 @@ export function buildWorld(): World {
     let k = 0
     for (const side of [-1, 1])
       for (let x = 2.75; x < 44 && k < 600; x += 0.16, k++) {
-        m.makeTranslation(side * x, 0.82 + 0.75, GATE_Z)
+        m.makeTranslation(side * x, 1.57, GATE_Z)
         bars.setMatrixAt(k, m)
-        m.makeTranslation(side * x, 0.82 + 1.5 + 0.06, GATE_Z)
+        m.makeTranslation(side * x, 2.38, GATE_Z)
         tips.setMatrixAt(k, m)
       }
     bars.count = tips.count = k
@@ -304,35 +185,344 @@ export function buildWorld(): World {
       for (const y of [0.95, 2.15])
         block(scene, M.iron, 41.5, 0.05, 0.05, side * (2.6 + 20.8), y, GATE_Z)
   }
+  // the open gate leaves stand against the hedges just inside
+  grid.block(-1.75, GATE_Z - 0.85, 0.15, 0.85)
+  grid.block(1.75, GATE_Z - 0.85, 0.15, 0.85)
 
-  // ---- lamps along the walk ----
+  // ---- lamps ----
   for (const [x, z] of [
-    [1.35, -3],
-    [-1.4, -14.5],
-    [6, -16.65],
-    [18.65, -22],
-    [21.35, -36.5],
-    [14, -38.65],
-    [-2.65, -44],
-    [-2.65, -58],
-  ] as V2[])
+    [1.45, -3],
+    [-1.45, -22.5],
+    [6, -16.55],
+    [15.5, -19.45],
+    [21.45, -22],
+    [18.55, -33],
+    [14, -38.55],
+    [3, -41.45],
+    [-5.45, -45],
+    [-2.55, -57],
+    [27.5, -16.55],
+  ] as V2[]) {
     lamp(scene, M, x, z, lamps, flames)
+    grid.block(x, z, 0.15, 0.15)
+  }
 
-  // ---- the signpost: where to find me ----
-  buildSignpost(scene, M, lamps, flames)
-  // a herald angel at the first bend
-  statue(scene, M, 'herald', -0.9, -21.0, 0.06, 0.4, M.marble)
+  // ---- signposts at the junctions ----
+  for (const s of signposts) {
+    directionSign(scene, M, s.at, s.arrows)
+    grid.block(s.at[0], s.at[1], 0.12, 0.12)
+  }
 
-  // ---- the fountain ----
+  // ---- I. find me: the signpost of links, and a monitor that shouldn't be here ----
+  linkSign(scene, M, hit, lamps, flames)
+  grid.block(SIGN[0], SIGN[1], 0.15, 0.15)
+  {
+    const crt = monitor(screens.discord, plasticMat)
+    crt.position.set(...MONITOR)
+    // (screens face +z, so turn them round to face the point)
+    crt.rotation.y = yawTo(MONITOR[0], MONITOR[2], 0.6, -10.5) + Math.PI
+    crt.userData.dynamic = true
+    scene.add(crt)
+    floaters.push({ obj: crt, y: MONITOR[1], yaw: crt.rotation.y })
+    hit(
+      'discord',
+      0,
+      { x: MONITOR[0], y: MONITOR[1], z: MONITOR[2] },
+      [0.35, 0.32, 0.35],
+      4.5,
+    )
+    sights.push({ line: 'discord', at: new THREE.Vector3(...MONITOR) })
+    grid.block(MONITOR[0], MONITOR[2], 0.3, 0.3)
+  }
+
+  // ---- II. on rotation: the fountain, cases in the grass, a screen, a walkman ----
+  const walkman = buildFountain()
+
+  // ---- III. things I've built: a monument for each, before the mausoleum ----
+  buildMausoleum(scene, M, lamps, flames, glassMat)
+  grid.block(MAUSOLEUM[0] + 0.1, MAUSOLEUM[1], 3.75, 2.65)
+  grid.block(MAUSOLEUM[0] - 3.7, MAUSOLEUM[1] - 2.9, 0.35, 0.35)
+  grid.block(MAUSOLEUM[0] - 3.7, MAUSOLEUM[1] + 2.9, 0.35, 0.35)
+  {
+    const spots: [number, number, number][] = [
+      [24.9, -34.3, 0],
+      [28.0, -34.7, 0],
+      [24.9, -25.7, Math.PI],
+      [28.0, -25.3, Math.PI],
+    ]
+    projects.forEach((p, i) => {
+      const [x, z, ry] = spots[i % spots.length]
+      const { half } = monument(scene, M, i, `${p.name}\n${p.year}`, x, z, ry)
+      grid.block(x, z, half[0], half[1], ry)
+      hit('project', i, { x, y: 1.3, z }, [half[0] + 0.1, 1.4, half[1] + 0.1], 5.5, ry)
+    })
+  }
+
+  // ---- IV. slvrr / sxvrce: sticky notes on the fence behind the shrine ----
+  buildShrine()
+
+  // ---- V. notes: a grave for each, with the note left at its foot ----
+  {
+    const epitaphBg = '#77756d'
+    notes.forEach((n, i) => {
+      // Two columns of five by the path; add columns westwards as notes pile up.
+      const col = Math.floor(i / 5)
+      const row = i % 5
+      const x = -9.2 - col * 3
+      const z = -47.4 - row * 2.5
+      const g = new THREE.Group()
+      g.position.set(x, 0, z)
+      g.rotation.y = Math.PI / 2 // faces the path (+x)
+      scene.add(g)
+      const w = 1.0
+      const h = 1.25
+      const s = new THREE.Shape()
+      s.moveTo(-w / 2, 0)
+      s.lineTo(w / 2, 0)
+      s.lineTo(w / 2, h - w / 2)
+      s.absarc(0, h - w / 2, w / 2, 0, Math.PI, false)
+      s.closePath()
+      const geo = new THREE.ExtrudeGeometry(s, {
+        depth: 0.16,
+        bevelEnabled: false,
+        curveSegments: 5,
+      })
+      geo.translate(0, 0, -0.08)
+      tile(geo, 1.2, 1.2)
+      g.add(new THREE.Mesh(geo, M.marble))
+      block(g, M.stone, 1.2, 0.18, 0.4, 0, 0, 0, 0, 1)
+      const words = wrap(n.title, 14).slice(0, 3).join('\n')
+      const face = tex.lettering(`${words}\n${n.date}`, {
+        w: 64,
+        h: 56,
+        bg: epitaphBg,
+        fg: '#e2ded2',
+        carved: true,
+        size: 13,
+        grain: i + 40,
+      })
+      mesh(g, new THREE.PlaneGeometry(0.82, 0.72), lambert({ map: face }), 0, 0.62, 0.085)
+      // the note itself, folded, on the ground at its foot
+      const paper = mesh(
+        scene,
+        new THREE.PlaneGeometry(0.28, 0.35).rotateX(-Math.PI / 2),
+        lambert({ map: tex.paper(i) }),
+        x + 0.75,
+        0.02,
+        z + 0.05,
+      )
+      paper.rotation.y = (rand() - 0.5) * 0.8
+      paper.userData.dynamic = true
+      grid.block(x, z, 0.25, 0.6)
+      hit('note', i, { x: x + 0.45, y: 0.55, z }, [0.65, 0.7, 0.65], 3)
+    })
+    // older graves behind them
+    const r = tex.rng(99)
+    const epitaph = lambert({
+      map: tex.lettering('R.I.P', {
+        w: 32,
+        h: 16,
+        bg: '#6f6d66',
+        fg: '#d6d3c9',
+        carved: true,
+        size: 12,
+      }),
+    })
+    for (let i = 0; i < 40; i++) {
+      const x = -20.3 + r() * 5.3
+      const z = -58.8 + r() * 13.6
+      if (Math.hypot(x + 17.5, z + 52) < 2.2) continue
+      grave(scene, M, x, z, r, epitaph)
+      grid.block(x, z, 0.35, 0.35)
+    }
+    block(scene, M.marble, 2.2, 0.8, 1.1, -17.5, 0, -52, Math.PI / 2, 1)
+    block(scene, M.marble, 2.4, 0.1, 1.3, -17.5, 0.8, -52, Math.PI / 2, 1)
+    statue(scene, M, 'weeper', -17.5, -52, 0.055, 0.9, undefined, Math.PI / 2)
+    grid.block(-17.5, -52, 0.65, 1.2)
+  }
+
+  // ---- VI. the end of the path: the calvary ----
   {
     const g = new THREE.Group()
-    g.position.set(11, 0, -24.5)
+    g.position.set(CALVARY[0], 0, CALVARY[1])
     scene.add(g)
-    // flagstones around it
-    const flag = new THREE.CircleGeometry(5.3, 18)
-    flag.rotateX(-Math.PI / 2)
-    const fuv = flag.attributes.uv as THREE.BufferAttribute
-    for (let i = 0; i < fuv.count; i++) fuv.setXY(i, fuv.getX(i) * 5, fuv.getY(i) * 5)
+    for (let i = 0; i < 4; i++)
+      block(g, M.stone, 7.2 - i * 1.5, 0.4, 7.2 - i * 1.5, 0, i * 0.4, 0, 0, 1)
+    block(g, M.darkStone, 0.6, 10, 0.6, 0, 1.6, 0, 0, 1)
+    block(g, M.darkStone, 4.4, 0.6, 0.6, 0, 8.6, 0, 0, 1)
+    for (const [dx, dz] of [
+      [-1, -1],
+      [1, -1],
+      [-1, 1],
+      [1, 1],
+    ] as V2[]) {
+      statue(
+        g,
+        M,
+        'angel',
+        dx * 4.4,
+        dz * 4.4,
+        0.065,
+        0.6,
+        M.marble,
+        dz > 0 ? 0 : Math.PI,
+      )
+      grid.block(CALVARY[0] + dx * 4.4, CALVARY[1] + dz * 4.4, 0.55, 0.55)
+    }
+    for (const [dx, dz] of [
+      [0, 5],
+      [5, 0],
+      [-5, 0],
+    ] as V2[]) {
+      lamp(scene, M, CALVARY[0] + dx, CALVARY[1] + dz, lamps, flames)
+      grid.block(CALVARY[0] + dx, CALVARY[1] + dz, 0.15, 0.15)
+    }
+    grid.block(CALVARY[0], CALVARY[1], 3.7, 3.7)
+    cathedral(scene, glassMat)
+  }
+
+  // ---- dead ends: a little something at the end of each ----
+  bench(0, -27.9, 0)
+  statue(scene, M, 'urn', 1.3, -28.2, 0.07, 0.5, M.stone)
+  grid.block(1.3, -28.2, 0.35, 0.35)
+  statue(scene, M, 'bust', 30.3, -18, 0.08, 1.0, M.marble, -Math.PI / 2)
+  grid.block(30.3, -18, 0.4, 0.4)
+  deadTree(scene, M, 21.2, -50.9, tex.rng(4))
+  grid.block(21.2, -50.9, 0.3, 0.3)
+  statue(scene, M, 'angel', -15.3, -40, 0.055, 0.5, M.stone, Math.PI / 2)
+  grid.block(-15.3, -40, 0.5, 0.5)
+
+  // ---- hedges, grown along every open edge ----
+  buildHedges(scene, grid, M.hedge)
+
+  // ---- trees above the hedges ----
+  {
+    const r = tex.rng(5)
+    let placed = 0
+    for (let tries = 0; tries < 3000 && placed < 80; tries++) {
+      const x = -28 + r() * 72
+      const z = 14 - r() * 96
+      const i = Math.floor((x - grid.x0) / CELL)
+      const j = Math.floor((z - grid.z0) / CELL)
+      if (grid.at(x, z) !== Cell.Hedge) continue
+      if (grid.distanceToOpen(i, j, 6) < 5) continue
+      if (Math.abs(z - GATE_Z) < 2) continue
+      if (r() < 0.82) cypress(scene, M, x, z, 5 + r() * 6)
+      else deadTree(scene, M, x, z, r)
+      placed++
+    }
+    const sil = basic({ color: 0x050607, fog: false })
+    for (let i = 0; i < 90; i++) {
+      const a = (i / 90) * Math.PI * 2
+      const d = 95 + rand() * 25
+      const h = 10 + rand() * 16
+      const c = new THREE.Mesh(new THREE.ConeGeometry(2.5 + rand() * 3, h, 5), sil)
+      c.position.set(8 + Math.cos(a) * d, h / 2 - 1, -30 + Math.sin(a) * d)
+      scene.add(c)
+    }
+  }
+
+  // ---- grass tufts along the hedges ----
+  {
+    const geo = new THREE.PlaneGeometry(0.6, 0.45)
+    geo.translate(0, 0.225, 0)
+    const merged = mergeGeos([geo, geo.clone().rotateY(Math.PI / 2)])
+    const mat = lambert(
+      { map: tex.tuft(), alphaTest: 0.5, side: THREE.DoubleSide },
+      { sway: true },
+    )
+    const N = 2800
+    const inst = new THREE.InstancedMesh(merged, mat, N)
+    const m = new THREE.Matrix4()
+    const q = new THREE.Quaternion()
+    const r = tex.rng(17)
+    const paved = (x: number, z: number) =>
+      (x > 23 && x < 39 && z > -37 && z < -23) ||
+      (x > -15 && x < 7 && z > -77 && z < -60.5) ||
+      Math.hypot(x - FOUNTAIN[0], z - FOUNTAIN[1]) < 5.3
+    let k = 0
+    for (let tries = 0; tries < 60000 && k < N; tries++) {
+      const x = grid.x0 + r() * grid.w * CELL
+      const z = grid.z0 + r() * grid.h * CELL
+      if (grid.at(x, z) !== Cell.Floor || paved(x, z)) continue
+      // near a hedge, off the trail
+      const nearHedge = [
+        [0.7, 0],
+        [-0.7, 0],
+        [0, 0.7],
+        [0, -0.7],
+      ].some(([dx, dz]) => grid.at(x + dx, z + dz) === Cell.Hedge)
+      if (!nearHedge && r() > 0.12) continue
+      const p = walk.at(walk.project([x, z]))
+      if (Math.hypot(x - p[0], z - p[1]) < 1.05) continue
+      q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), r() * Math.PI)
+      const s = 0.55 + r() * 0.9
+      m.compose(
+        new THREE.Vector3(x, 0, z),
+        q,
+        new THREE.Vector3(s, s * (0.7 + r() * 0.8), s),
+      )
+      inst.setMatrixAt(k++, m)
+    }
+    inst.count = k
+    scene.add(inst)
+  }
+
+  // ---- mist ----
+  const mist = createMist(walk)
+  scene.add(mist.mesh)
+
+  for (const f of flames) f.userData.dynamic = true
+  gate.left.userData.dynamic = gate.right.userData.dynamic = true
+  mergeStatic(scene)
+
+  return {
+    scene,
+    walk,
+    grid,
+    hits,
+    gate,
+    flowing,
+    flames,
+    lamps,
+    mist,
+    glassMats,
+    screens,
+    floaters,
+    walkman,
+    sights,
+  }
+
+  // ------------------------------------------------------------------
+
+  function water(repeat: number, falling = false) {
+    const t = tex.water()
+    t.repeat.set(repeat * (falling ? 3 : 1), repeat * (falling ? 0.8 : 1))
+    flowing.push(t)
+    t.userData.falling = falling
+    return lambert({
+      map: t,
+      transparent: true,
+      opacity: falling ? 0.55 : 0.85,
+      emissive: 0x141b24,
+      side: falling ? THREE.DoubleSide : THREE.FrontSide,
+      depthWrite: !falling,
+    })
+  }
+
+  function bench(x: number, z: number, ry: number) {
+    block(scene, M.stone, 1.8, 0.45, 0.5, x, 0, z, ry, 1)
+    block(scene, M.stone, 1.9, 0.08, 0.6, x, 0.45, z, ry, 1)
+    grid.block(x, z, 0.95, 0.3, ry)
+  }
+
+  function buildFountain() {
+    const [cx, cz] = FOUNTAIN
+    const g = new THREE.Group()
+    g.position.set(cx, 0, cz)
+    scene.add(g)
+    const flag = new THREE.CircleGeometry(5.3, 18).rotateX(-Math.PI / 2)
+    tile(flag, 5, 5)
     mesh(g, flag, M.darkStone, 0, 0.014, 0)
     mesh(
       g,
@@ -342,20 +532,32 @@ export function buildWorld(): World {
       0.325,
       0,
     )
-    // the rim's inner wall, so the pool reads as sunk into the basin
     const inner = tile(new THREE.CylinderGeometry(2.5, 2.5, 0.3, 12, 1, true), 8, 0.2)
-    mesh(g, inner, M.darkStone, 0, 0.5, 0).material = lambert({
-      map: (M.darkStone as THREE.MeshLambertMaterial).map,
-      side: THREE.BackSide,
-    })
-    const pool = water(2.5)
-    mesh(g, new THREE.CircleGeometry(2.5, 12).rotateX(-Math.PI / 2), pool, 0, 0.45, 0)
+    mesh(
+      g,
+      inner,
+      lambert({
+        map: (M.darkStone as THREE.MeshLambertMaterial).map,
+        side: THREE.BackSide,
+      }),
+      0,
+      0.5,
+      0,
+    )
+    mesh(
+      g,
+      new THREE.CircleGeometry(2.5, 12).rotateX(-Math.PI / 2),
+      water(2.5),
+      0,
+      0.45,
+      0,
+    )
     mesh(
       g,
       tile(new THREE.CylinderGeometry(0.32, 0.45, 1.3, 8), 1.2, 0.65),
       M.stone,
       0,
-      0.65 + 0.4,
+      1.05,
       0,
     )
     mesh(
@@ -375,677 +577,559 @@ export function buildWorld(): World {
       0,
     )
     mesh(g, new THREE.CylinderGeometry(0.14, 0.2, 0.5, 6), M.stone, 0, 1.95, 0)
-    // falling curtain of water from the bowl into the pool
-    const fall = water(1, true)
-    const curtain = new THREE.CylinderGeometry(0.98, 1.3, 1.1, 14, 1, true)
-    mesh(g, curtain, fall, 0, 1.15, 0)
+    mesh(
+      g,
+      new THREE.CylinderGeometry(0.98, 1.3, 1.1, 14, 1, true),
+      water(1, true),
+      0,
+      1.15,
+      0,
+    )
     statue(g, M, 'cherub', 0, 0, 0.055, 2.18, undefined, Math.PI * 0.08)
-    // stone benches facing it
-    for (const a of [Math.PI * 0.85, Math.PI * 0.15 + Math.PI]) {
-      const bx = Math.cos(a) * 4.3
-      const bz = Math.sin(a) * 4.3
-      block(g, M.stone, 1.8, 0.45, 0.5, bx, 0, bz, -a + Math.PI / 2, 1)
-      block(g, M.stone, 1.9, 0.08, 0.6, bx, 0.45, bz, -a + Math.PI / 2, 1)
+    grid.circle(cx, cz, 3.0, Cell.Block, [Cell.Floor])
+    hit('fountain', 0, { x: cx, y: 0.45, z: cz }, [2.85, 0.45, 2.85], 6.5)
+
+    // two benches on the far side: a screen on one, a walkman on the other
+    const benchAt = (a: number) => {
+      const x = cx + Math.cos(a) * 4.3
+      const z = cz + Math.sin(a) * 4.3
+      const ry = -a + Math.PI / 2
+      bench(x, z, ry)
+      return { x, z, ry }
     }
+    const b1 = benchAt(Math.PI * 0.82)
+    const b2 = benchAt(Math.PI * 1.18)
+
+    const crt = monitor(screens.music, plasticMat)
+    crt.position.set(b1.x, 0.53 + 0.23, b1.z)
+    crt.rotation.y = yawTo(b1.x, b1.z, cx + 1, cz + 6) + Math.PI
+    scene.add(crt)
+    hit('nowplaying', 0, crt.position, [0.35, 0.3, 0.35], 4.5)
+    sights.push({ line: 'nowPlaying', at: crt.position.clone() })
+
+    const wm = walkmanModel(screens.lcd)
+    wm.position.set(b2.x, 0.53 + 0.02, b2.z)
+    wm.rotation.order = 'YXZ'
+    wm.rotation.set(-1.2, yawTo(b2.x, b2.z, cx + 2, cz + 6) + Math.PI, 0)
+    wm.userData.dynamic = true
+    scene.add(wm)
+    hit('walkman', 0, { x: b2.x, y: 0.62, z: b2.z }, [0.3, 0.22, 0.3], 3.5)
+    sights.push({ line: 'walkman', at: wm.position.clone() })
+
+    // the albums, dropped in the grass and against the basin
+    const r = tex.rng(77)
+    const caseGeo = new THREE.BoxGeometry(0.5, 0.5, 0.05)
+    const edge = lambert({ color: 0x3c3f47, transparent: true, opacity: 0.85 })
+    media.forEach((m, i) => {
+      // strewn round the east side, away from the benches
+      const a =
+        Math.PI * (-0.42 + (i / Math.max(1, media.length - 1)) * 0.86) +
+        (r() - 0.5) * 0.15
+      const d = 3.35 + r() * 1.3
+      const x = cx + Math.cos(a) * d
+      const z = cz + Math.sin(a) * d
+      // the covers glow faintly, so they catch your eye in the dark
+      const art = tex.cover(m.swatch ? null : coverPath(m), m.swatch)
+      const front = lambert({
+        map: art,
+        emissive: 0xffffff,
+        emissiveMap: art,
+        emissiveIntensity: 0.3,
+      })
+      const back = lambert({ color: 0x15161a })
+      const c = new THREE.Mesh(caseGeo, [edge, edge, edge, edge, front, back])
+      const propped = i % 3 === 1
+      c.rotation.order = 'YXZ'
+      c.rotation.y = yawTo(x, z, cx, cz + 6) + (r() - 0.5) * 0.9
+      c.rotation.x = propped ? -0.45 : -Math.PI / 2 + (r() - 0.5) * 0.15
+      c.rotation.z = (r() - 0.5) * 0.4
+      c.position.set(x, propped ? 0.2 : 0.035, z)
+      c.userData.dynamic = true
+      scene.add(c)
+      hit('album', i, { x, y: 0.25, z }, [0.34, 0.28, 0.34], 4.5)
+    })
+    return wm
   }
 
-  // ---- the mausoleum: where the relics are kept ----
-  buildMausoleum(scene, M, lamps, flames, glassMat)
-
-  // ---- the wayside shrine ----
-  {
+  function buildShrine() {
+    const [sx, sz] = SHRINE
     const g = new THREE.Group()
-    g.position.set(9, 0, -45.6)
+    g.position.set(sx, 0, sz)
     scene.add(g)
     block(g, M.stone, 2.0, 0.85, 1.1, 0, 0, 0, 0, 1)
     block(g, M.stone, 2.0, 2.1, 0.35, 0, 0.85, -0.45, 0, 1)
     block(g, M.stone, 0.35, 2.1, 1.0, -0.85, 0.85, -0.05, 0, 1)
     block(g, M.stone, 0.35, 2.1, 1.0, 0.85, 0.85, -0.05, 0, 1)
-    // a little pitched roof
     for (const s of [-1, 1]) {
-      const r = block(g, M.darkStone, 1.35, 0.14, 1.35, s * 0.55, 3.15, -0.05, 0, 1)
-      r.rotation.z = -s * 0.62
+      const roof = block(g, M.darkStone, 1.35, 0.14, 1.35, s * 0.55, 3.15, -0.05, 0, 1)
+      roof.rotation.z = -s * 0.62
     }
-    mesh(g, new THREE.BoxGeometry(0.08, 0.5, 0.08), M.iron, 0, 3.75, -0.05)
-    mesh(g, new THREE.BoxGeometry(0.32, 0.08, 0.08), M.iron, 0, 3.82, -0.05)
+    block(g, M.iron, 0.08, 0.5, 0.08, 0, 3.5, -0.05)
+    block(g, M.iron, 0.32, 0.08, 0.08, 0, 3.78, -0.05)
     statue(g, M, 'madonna', 0, -0.2, 0.05, 0.85)
-    // candles
     for (let i = 0; i < 7; i++) {
       const x = -0.75 + i * 0.25 + (rand() - 0.5) * 0.08
       const h = 0.1 + rand() * 0.18
-      block(g, M.marble, 0.06, h, 0.06, x, 0.85, 0.35 + (rand() - 0.5) * 0.15)
-      const f = mesh(
-        g,
-        new THREE.BoxGeometry(0.035, 0.07, 0.035),
-        M.flame,
+      block(g, M.marble, 0.06, h, 0.06, x, 0.85, 0.35)
+      flames.push(
+        mesh(
+          g,
+          new THREE.BoxGeometry(0.035, 0.07, 0.035),
+          M.flame,
+          x,
+          0.85 + h + 0.04,
+          0.35,
+        ),
+      )
+    }
+    lamps.push(new THREE.Vector3(sx, 1.2, sz + 0.7))
+    grid.block(sx, sz - 0.1, 1.05, 0.7)
+    statue(scene, M, 'monk', 12.1, -45.6, 0.055, 0.3, M.stone, -0.6)
+    grid.block(12.1, -45.6, 0.45, 0.45)
+
+    // a weathered fence behind, with the notes stuck along it
+    const fz = -49.25
+    for (let x = 5.3; x <= 12.8; x += 1.25)
+      block(scene, M.wood, 0.12, 2.0, 0.12, x, 0, fz - 0.05, 0, 1)
+    for (const y of [0.45, 1.15, 1.7])
+      block(scene, M.wood, 7.6, 0.32, 0.06, 9.05, y, fz, 0, 1)
+    grid.block(9.05, fz, 3.85, 0.15)
+    const items = [...profile.bio, ...timeline]
+    const slots: number[] = []
+    const n = items.length
+    for (let i = 0; i < n; i++) {
+      // fill the fence left of the shrine, then right of it
+      const leftCount = Math.ceil(n / 2.4)
+      slots.push(
+        i < leftCount
+          ? 5.75 + (i * 2.05) / Math.max(1, leftCount - 1)
+          : 10.45 + ((i - leftCount) * 2.0) / Math.max(1, n - leftCount - 1),
+      )
+    }
+    items.forEach((_, i) => {
+      const x = slots[i]
+      const y = 1.25 + ((i * 37) % 5) * 0.08
+      const note = mesh(
+        scene,
+        new THREE.PlaneGeometry(0.26, 0.26),
+        lambert({ map: tex.sticky(i + 1) }),
         x,
-        0.85 + h + 0.04,
-        0.35,
+        y,
+        fz + 0.04,
       )
-      flames.push(f)
-    }
-    lamps.push(new THREE.Vector3(9, 1.2, -44.9))
-    statue(scene, M, 'monk', 10.55, -44.4, 0.055, 0.3, M.stone, -0.35)
-    plaque(g, 'AVE', 0, 0.45, 0.56, 0.9, 0.3)
-  }
-
-  // ---- the old graves ----
-  {
-    const r = tex.rng(99)
-    const epitaph = lambert({
-      map: tex.lettering('R.I.P', {
-        w: 32,
-        h: 16,
-        bg: '#6f6d66',
-        fg: '#d6d3c9',
-        carved: true,
-        size: 12,
-      }),
+      note.rotation.z = (rand() - 0.5) * 0.3
+      hit('sticky', i, { x, y, z: fz + 0.1 }, [0.2, 0.2, 0.12], 3)
     })
-    for (let i = 0; i < 46; i++) {
-      const x = -19.5 + r() * 12
-      const z = -58.5 + r() * 13
-      if (Math.hypot(x + 9.5, z + 52) < 2.4) continue
-      grave(scene, M, x, z, r, epitaph)
-    }
-    // a tomb with a weeping angel
-    block(scene, M.marble, 2.2, 0.8, 1.1, -9.8, 0, -52, Math.PI / 2, 1)
-    block(scene, M.marble, 2.4, 0.1, 1.3, -9.8, 0.8, -52, Math.PI / 2, 1)
-    statue(scene, M, 'weeper', -9.8, -52, 0.055, 0.9, undefined, Math.PI / 2)
-  }
-
-  // ---- the calvary, and the cathedral beyond ----
-  {
-    const g = new THREE.Group()
-    g.position.set(-4, 0, -70)
-    scene.add(g)
-    block(g, M.stone, 4.2, 0.35, 3.0, 0, 0, 0, 0, 1)
-    block(g, M.stone, 3.0, 0.35, 2.2, 0, 0.35, 0, 0, 1)
-    block(g, M.stone, 1.8, 0.35, 1.4, 0, 0.7, 0, 0, 1)
-    block(g, M.darkStone, 0.38, 6.4, 0.38, 0, 1.05, 0, 0, 1)
-    block(g, M.darkStone, 2.8, 0.38, 0.38, 0, 5.1, 0, 0, 1)
-    plaque(g, 'INRI', 0, 5.95, 0.2, 0.6, 0.22)
-    statue(g, M, 'angel', -2.6, 0.3, 0.06, 0.35, M.marble)
-    statue(g, M, 'angel', 2.6, 0.3, 0.06, 0.35, M.marble)
-    lamps.push(new THREE.Vector3(-4, 1.4, -68))
-    // the churchyard's far wall
-    block(scene, M.stone, 60, 1.6, 0.6, -4, 0, -78, 0, 2)
-    cathedral(scene, glassMat)
-  }
-
-  // ---- trees: cypresses above the hedges, dead trees, a far tree line ----
-  {
-    const r = tex.rng(5)
-    const near = (x: number, z: number, d: number) =>
-      Math.hypot(
-        x - walk.at(walk.project([x, z]))[0],
-        z - walk.at(walk.project([x, z]))[1],
-      ) < d
-    const clear = (x: number, z: number) =>
-      [
-        [11, -24.5, 7],
-        [28, -30, 6.5],
-        [9, -45.5, 3.5],
-        [-13, -52, 8.5],
-        [-4, -70, 7],
-      ].some(([cx, cz, cr]) => Math.hypot(x - cx, z - cz) < cr) || z > GATE_Z - 1
-    let placed = 0
-    for (let tries = 0; tries < 900 && placed < 70; tries++) {
-      const x = -26 + r() * 64
-      const z = 2 - r() * 74
-      if (clear(x, z) || near(x, z, 3.6)) continue
-      if (r() < 0.8) cypress(scene, M, x, z, 5 + r() * 6)
-      else deadTree(scene, M, x, z, r)
-      placed++
-    }
-    // outside the wall, by the road
-    for (const [x, z] of [
-      [-6, 9],
-      [7, 13],
-      [-9, 15],
-      [10, 7],
-    ] as V2[])
-      cypress(scene, M, x, z, 7 + rand() * 3)
-    // the far tree line: flat black silhouettes against the sky
-    const sil = basic({ color: 0x050607, fog: false })
-    for (let i = 0; i < 90; i++) {
-      const a = (i / 90) * Math.PI * 2
-      const d = 95 + rand() * 25
-      const h = 10 + rand() * 16
-      const c = new THREE.Mesh(new THREE.ConeGeometry(2.5 + rand() * 3, h, 5), sil)
-      c.position.set(8 + Math.cos(a) * d, h / 2 - 1, -30 + Math.sin(a) * d)
-      scene.add(c)
-    }
-  }
-
-  // ---- grass tufts ----
-  {
-    const geo = new THREE.PlaneGeometry(0.6, 0.45)
-    geo.translate(0, 0.225, 0)
-    const cross = geo.clone().rotateY(Math.PI / 2)
-    const merged = mergeGeos([geo, cross])
-    const mat = lambert(
-      { map: tex.tuft(), alphaTest: 0.5, side: THREE.DoubleSide },
-      { sway: true },
-    )
-    const N = 2600
-    const inst = new THREE.InstancedMesh(merged, mat, N)
-    const m = new THREE.Matrix4()
-    const q = new THREE.Quaternion()
-    const r = tex.rng(17)
-    let k = 0
-    while (k < N) {
-      let x: number
-      let z: number
-      if (k < 1800) {
-        // the grass verge between trail and hedge
-        const s = r() * walk.length
-        const p = walk.at(s)
-        const h = walk.heading(s)
-        const side = r() < 0.5 ? -1 : 1
-        const off = 1.05 + r() * 0.85
-        x = p[0] + Math.cos(h) * off * side
-        z = p[1] - Math.sin(h) * off * side
-      } else {
-        x = -16 + r() * 52
-        z = 18 - r() * 84
-        if (near2(walk, x, z, 1.1)) continue
-      }
-      q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), r() * Math.PI)
-      const s = 0.55 + r() * 0.9
-      m.compose(
-        new THREE.Vector3(x, 0, z),
-        q,
-        new THREE.Vector3(s, s * (0.7 + r() * 0.8), s),
-      )
-      inst.setMatrixAt(k++, m)
-    }
-    scene.add(inst)
-  }
-
-  // ---- mist: one mesh of camera-facing puffs, drifting in the shader ----
-  const mist = createMist(walk)
-  scene.add(mist.mesh)
-
-  // ---- what you can click ----
-  const hits: THREE.Mesh[] = []
-  const hitMat = new THREE.MeshBasicMaterial({ visible: false })
-  stations.forEach((st, i) => {
-    if (!st.poi) return
-    const [hx, hy, hz] = st.poi.hit
-    const m = new THREE.Mesh(new THREE.BoxGeometry(hx * 2, hy * 2, hz * 2), hitMat)
-    m.position.set(...st.poi.look)
-    m.userData.station = i
-    scene.add(m)
-    hits.push(m)
-  })
-
-  for (const f of flames) f.userData.dynamic = true
-  gate.left.userData.dynamic = gate.right.userData.dynamic = true
-  mergeStatic(scene)
-
-  return { scene, walk, hits, gate, flowing, flames, lamps, mist, glassMats, occluders }
-
-  function water(repeat: number, falling = false) {
-    const t = tex.water()
-    t.repeat.set(repeat * (falling ? 3 : 1), repeat * (falling ? 0.8 : 1))
-    flowing.push(t)
-    t.userData.falling = falling
-    return lambert({
-      map: t,
-      transparent: true,
-      opacity: falling ? 0.55 : 0.85,
-      emissive: 0x141b24,
-      side: falling ? THREE.DoubleSide : THREE.FrontSide,
-      depthWrite: !falling,
-    })
-  }
-
-  function plaque(
-    g: THREE.Object3D,
-    text: string,
-    x: number,
-    y: number,
-    z: number,
-    w: number,
-    h: number,
-  ) {
-    const t = tex.lettering(text, {
+    const ave = tex.lettering('AVE', {
       w: 48,
       h: 16,
       bg: '#5b5a55',
       fg: '#cfccc2',
       carved: true,
       size: 13,
-      grain: text.length,
     })
-    const m = mesh(g, new THREE.PlaneGeometry(w, h), lambert({ map: t }), x, y, z)
-    return m
+    mesh(g, new THREE.PlaneGeometry(0.9, 0.3), lambert({ map: ave }), 0, 0.45, 0.56)
   }
 }
 
-/**
- * Bakes every static mesh into one geometry per material, so the whole
- * churchyard draws in a few dozen calls instead of hundreds. Animated things
- * (`userData.dynamic`), instanced meshes and multi-material meshes stay as
- * they are.
- */
-function mergeStatic(scene: THREE.Scene) {
-  scene.updateMatrixWorld(true)
-  const groups = new Map<
-    string,
-    { mat: THREE.Material; geos: THREE.BufferGeometry[]; meshes: THREE.Mesh[] }
-  >()
-  const visit = (o: THREE.Object3D) => {
-    if (o.userData.dynamic) return
-    if (
-      o instanceof THREE.Mesh &&
-      !(o instanceof THREE.InstancedMesh) &&
-      !Array.isArray(o.material) &&
-      o.userData.station === undefined
-    ) {
-      const mat = o.material as THREE.Material
-      let g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone()
-      g.applyMatrix4(o.matrixWorld)
-      const names = Object.keys(g.attributes).sort()
-      for (const n of names)
-        if (!['position', 'normal', 'uv', 'color'].includes(n)) g.deleteAttribute(n)
-      g = g.index ? g.toNonIndexed() : g
-      const key = mat.uuid + ':' + Object.keys(g.attributes).sort().join(',')
-      let entry = groups.get(key)
-      if (!entry) groups.set(key, (entry = { mat, geos: [], meshes: [] }))
-      entry.geos.push(g)
-      entry.meshes.push(o)
+// --------------------------------------------------------------------------
+
+/** Hedge leaves, mapped by world position so neighbouring blocks line up. */
+function hedgeMaterial() {
+  const m = lambert({ map: tex.hedge() })
+  const inner = m.onBeforeCompile
+  m.onBeforeCompile = (shader, renderer) => {
+    inner(shader, renderer)
+    shader.vertexShader = shader.vertexShader.replace(
+      '#include <uv_vertex>',
+      /* glsl */ `#include <uv_vertex>
+      {
+        vec4 wq = modelMatrix * instanceMatrix * vec4(position, 1.0);
+        vMapUv = abs(normal.x) > 0.5 ? wq.zy : abs(normal.y) > 0.5 ? wq.xz : wq.xy;
+      }`,
+    )
+  }
+  m.customProgramCacheKey = () => 'psx-hedge'
+  return m
+}
+
+/** A block of hedge in every solid cell within a metre of open ground. */
+function buildHedges(scene: THREE.Scene, grid: Grid, mat: THREE.Material) {
+  const cells: [number, number, number][] = []
+  for (let j = 0; j < grid.h; j++)
+    for (let i = 0; i < grid.w; i++) {
+      if (grid.cells[j * grid.w + i] !== Cell.Hedge) continue
+      const [x, z] = grid.center(i, j)
+      if (Math.abs(z - GATE_Z) < 0.8) continue // the wall's line
+      if (grid.distanceToOpen(i, j, 2) > 2) continue
+      // a gently uneven top
+      const h =
+        2.3 +
+        0.18 * Math.sin(x * 0.7 + z * 0.3) * Math.sin(z * 0.9 - x * 0.2) +
+        0.06 * Math.sin(x * 3.1 + z * 2.3)
+      cells.push([x, z, h])
     }
-    for (const c of o.children) visit(c)
-  }
-  visit(scene)
-  for (const { mat, geos, meshes } of groups.values()) {
-    if (meshes.length < 2) continue
-    const merged = mergeGeometries(geos, false)
-    if (!merged) continue
-    merged.computeBoundingSphere()
-    for (const m of meshes) m.removeFromParent()
-    scene.add(new THREE.Mesh(merged, mat))
-  }
+  const geo = new THREE.BoxGeometry(CELL, 1, CELL).translate(0, 0.5, 0)
+  const inst = new THREE.InstancedMesh(geo, mat, cells.length)
+  const m = new THREE.Matrix4()
+  cells.forEach(([x, z, h], k) => {
+    m.makeScale(1, h, 1).setPosition(x, 0, z)
+    inst.setMatrixAt(k, m)
+  })
+  inst.computeBoundingSphere()
+  scene.add(inst)
 }
 
-/** Low banks of mist along the walk, as billboards in a single draw call. */
-function createMist(walk: Walk, count = 90) {
-  const r = tex.rng(29)
+function trailRibbon(scene: THREE.Scene, walk: Walk, mat: THREE.Material) {
+  const pts = walk.points
   const pos: number[] = []
-  const corner: number[] = []
-  const size: number[] = []
   const uv: number[] = []
   const idx: number[] = []
-  for (let i = 0; i < count; i++) {
-    const s = r() * walk.length
-    const p = walk.at(s)
-    const c = [p[0] + (r() - 0.5) * 7, 0.35 + r() * 0.6, p[1] + (r() - 0.5) * 7]
-    const w = 4 + r() * 5
-    const seed = r() * 100
-    for (const [cx, cy] of [
-      [-0.5, -0.5],
-      [0.5, -0.5],
-      [0.5, 0.5],
-      [-0.5, 0.5],
-    ]) {
-      pos.push(c[0], c[1], c[2])
-      corner.push(cx, cy)
-      size.push(w, w * 0.45, seed)
-      uv.push(cx + 0.5, cy + 0.5)
+  let s = 0
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[Math.max(0, i - 1)]
+    const b = pts[Math.min(pts.length - 1, i + 1)]
+    const dx = b[0] - a[0]
+    const dz = b[1] - a[1]
+    const l = Math.hypot(dx, dz) || 1
+    const rx = -dz / l
+    const rz = dx / l
+    if (i > 0) s += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1])
+    pos.push(pts[i][0] - rx, 0.012, pts[i][1] - rz, pts[i][0] + rx, 0.012, pts[i][1] + rz)
+    uv.push(s / 4, 0, s / 4, 1)
+    if (i > 0) {
+      const k = i * 2
+      idx.push(k - 2, k - 1, k, k - 1, k + 1, k)
     }
-    const k = i * 4
-    idx.push(k, k + 1, k + 2, k, k + 2, k + 3)
   }
   const g = new THREE.BufferGeometry()
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
-  g.setAttribute('aCorner', new THREE.Float32BufferAttribute(corner, 2))
-  g.setAttribute('aSize', new THREE.Float32BufferAttribute(size, 3))
-  g.setAttribute('aUv', new THREE.Float32BufferAttribute(uv, 2))
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2))
   g.setIndex(idx)
-  const uniforms = {
-    uTime: { value: 0 },
-    uDensity: { value: 0.06 },
+  g.computeVertexNormals()
+  mesh(scene, g, mat)
+}
+
+function pave(
+  scene: THREE.Scene,
+  mat: THREE.Material,
+  x0: number,
+  z0: number,
+  x1: number,
+  z1: number,
+) {
+  const g = new THREE.PlaneGeometry(x1 - x0, z1 - z0).rotateX(-Math.PI / 2)
+  tile(g, (x1 - x0) / 2, (z1 - z0) / 2)
+  mesh(scene, g, mat, (x0 + x1) / 2, 0.013, (z0 + z1) / 2)
+}
+
+function wrap(text: string, max: number) {
+  const out: string[] = []
+  let line = ''
+  for (const word of text.split(/\s+/)) {
+    if ((line + ' ' + word).trim().length > max && line) {
+      out.push(line)
+      line = word
+    } else line = (line + ' ' + word).trim()
   }
-  const mat = new THREE.ShaderMaterial({
-    uniforms,
-    transparent: true,
-    depthWrite: false,
-    vertexShader: /* glsl */ `
-      attribute vec2 aCorner;
-      attribute vec3 aSize;
-      uniform float uTime;
-      attribute vec2 aUv;
-      varying vec2 vUv;
-      varying float vDepth;
-      void main() {
-        vUv = aUv;
-        vec3 c = position;
-        c.x += sin(uTime * 0.05 + aSize.z) * 2.0 + sin(uTime * 0.11 + aSize.z * 3.0) * 0.6;
-        vec4 mv = modelViewMatrix * vec4(c, 1.0);
-        mv.xy += aCorner * aSize.xy;
-        vDepth = -mv.z;
-        gl_Position = projectionMatrix * mv;
-      }`,
-    fragmentShader: /* glsl */ `
-      uniform float uDensity;
-      varying vec2 vUv;
-      varying float vDepth;
-      void main() {
-        vec2 q = vUv - 0.5;
-        float a = pow(max(0.0, 1.0 - length(q) * 2.0), 1.6) * 0.016;
-        // fade into the fog with distance, and away when it's right in your face
-        float fog = 1.0 - exp(-pow(uDensity * vDepth, 2.0));
-        a *= (1.0 - fog) * smoothstep(1.5, 6.0, vDepth);
-        gl_FragColor = vec4(vec3(0.55, 0.59, 0.64), a);
-      }`,
-  })
-  const mesh = new THREE.Mesh(g, mat)
-  mesh.frustumCulled = false
-  mesh.userData.dynamic = true
-  return { mesh, uniforms }
-}
-
-function rightOf(a: V2, b: V2): [number, number] {
-  const dx = b[0] - a[0]
-  const dz = b[1] - a[1]
-  const l = Math.hypot(dx, dz) || 1
-  return [-dz / l, dx / l]
-}
-
-function near2(walk: Walk, x: number, z: number, d: number) {
-  const p = walk.at(walk.project([x, z]))
-  return Math.hypot(x - p[0], z - p[1]) < d
-}
-
-function mergeGeos(geos: THREE.BufferGeometry[]) {
-  const pos: number[] = []
-  const nor: number[] = []
-  const uv: number[] = []
-  const idx: number[] = []
-  let off = 0
-  for (const g of geos) {
-    const ng = g.index ? g : g
-    const p = ng.attributes.position
-    for (let i = 0; i < p.count; i++) {
-      pos.push(p.getX(i), p.getY(i), p.getZ(i))
-      nor.push(0, 1, 0) // grass is lit from above, whichever way the blade faces
-      uv.push(ng.attributes.uv.getX(i), ng.attributes.uv.getY(i))
-    }
-    const index = ng.index!
-    for (let i = 0; i < index.count; i++) idx.push(index.getX(i) + off)
-    off += p.count
-  }
-  const out = new THREE.BufferGeometry()
-  out.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
-  out.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3))
-  out.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2))
-  out.setIndex(idx)
+  if (line) out.push(line)
   return out
 }
 
-type Mats = Record<
-  | 'grass'
-  | 'trail'
-  | 'hedge'
-  | 'stone'
-  | 'darkStone'
-  | 'marble'
-  | 'wood'
-  | 'bark'
-  | 'iron'
-  | 'statue'
-  | 'glow'
-  | 'flame'
-  | 'lanternGlass'
-  | 'void'
-  | 'cypress',
-  THREE.Material
->
-
-/** A voxel statue standing at (x, z), its base at `y`, on an optional plinth. */
-function statue(
-  parent: THREE.Object3D,
-  M: Mats,
-  name: SpriteName,
-  x: number,
-  z: number,
-  size: number,
-  y = 0,
-  plinth?: THREE.Material,
-  ry = 0,
-) {
+/**
+ * A board with a word on both faces and a point at one end; points along
+ * local +x.
+ */
+function arrowBoard(label: string, M: Mats, seed: number, len = 0.95) {
+  const t = tex.lettering(label, {
+    w: label.length > 10 ? 96 : 64,
+    h: 16,
+    bg: seed % 3 ? '#3b2f22' : '#33291f',
+    fg: '#e0d7c0',
+    size: label.length > 10 ? 12 : 13,
+    grain: seed + 5,
+  })
+  const face = lambert({ map: t })
   const g = new THREE.Group()
-  g.position.set(x, y, z)
-  g.rotation.y = ry
-  const { stone, glow } = voxelGeometry(name, size)
-  g.add(new THREE.Mesh(stone, M.statue))
-  if (glow) g.add(new THREE.Mesh(glow, M.glow))
-  if (plinth) {
-    const box = new THREE.Box3().setFromBufferAttribute(
-      stone.attributes.position as THREE.BufferAttribute,
-    )
-    const w = Math.max(0.5, (box.max.x - box.min.x) * 0.75)
-    block(g, plinth, w, y, Math.max(0.5, (box.max.z - box.min.z) * 1.4), 0, -y, 0, 0, 1)
-  }
-  parent.add(g)
+  const board = new THREE.Mesh(new THREE.BoxGeometry(len, 0.17, 0.04), [
+    M.wood,
+    M.wood,
+    M.wood,
+    M.wood,
+    face,
+    face,
+  ])
+  board.position.x = len / 2
+  g.add(board)
+  const tip = new THREE.Mesh(boxGeo(0.12, 0.12, 0.04), M.wood)
+  tip.position.x = len
+  tip.rotation.z = Math.PI / 4
+  g.add(tip)
   return g
 }
 
-function lamp(
-  parent: THREE.Object3D,
-  M: Mats,
-  x: number,
-  z: number,
-  lamps: THREE.Vector3[],
-  flames: THREE.Object3D[],
-) {
-  block(parent, M.iron, 0.09, 2.5, 0.09, x, 0, z)
-  block(parent, M.iron, 0.24, 0.12, 0.24, x, 0, z)
-  const head = new THREE.Group()
-  head.position.set(x, 2.5, z)
-  parent.add(head)
-  block(head, M.iron, 0.34, 0.05, 0.34, 0, 0, 0)
-  block(head, M.lanternGlass, 0.22, 0.3, 0.22, 0, 0.05, 0)
-  for (const [dx, dz] of [
-    [-1, -1],
-    [1, -1],
-    [-1, 1],
-    [1, 1],
-  ])
-    block(head, M.iron, 0.03, 0.32, 0.03, dx * 0.12, 0.05, dz * 0.12)
-  const cap = mesh(
-    head,
-    new THREE.ConeGeometry(0.25, 0.22, 4),
-    M.iron,
-    0,
-    0.47,
-    0,
+/** A signpost at a junction, its arrows pointing the way along each branch. */
+function directionSign(scene: THREE.Scene, M: Mats, at: V2, arrows: [string, V2][]) {
+  block(scene, M.wood, 0.13, 2.6, 0.13, at[0], 0, at[1], 0, 1)
+  mesh(
+    scene,
+    new THREE.ConeGeometry(0.12, 0.16, 4),
+    M.wood,
+    at[0],
+    2.68,
+    at[1],
     Math.PI / 4,
   )
-  cap.rotation.y = Math.PI / 4
-  const f = mesh(head, new THREE.BoxGeometry(0.06, 0.12, 0.06), M.flame, 0, 0.17, 0)
-  flames.push(f)
-  lamps.push(new THREE.Vector3(x, 2.6, z))
+  arrows.forEach(([label, [dx, dz]], i) => {
+    const a = arrowBoard(label, M, i + Math.round(at[0] * 3))
+    a.position.set(at[0], 2.3 - i * 0.24, at[1])
+    a.rotation.y = Math.atan2(-dz, dx)
+    // a slight droop, as old signs have
+    a.rotation.z = (((i * 7 + 3) % 5) - 2) * 0.015
+    scene.add(a)
+  })
 }
 
-function buildGate(
+/** The signpost of links: an arrow per profile, each one clickable. */
+function linkSign(
   scene: THREE.Scene,
   M: Mats,
-  lamps: THREE.Vector3[],
-  flames: THREE.Object3D[],
-) {
-  const Z = GATE_Z
-  const HALF = 1.65
-  // stone pillars with urns on top and lanterns on brackets
-  for (const s of [-1, 1]) {
-    const x = s * (HALF + 0.45)
-    block(scene, M.stone, 0.9, 3.0, 0.9, x, 0, Z, 0, 1.5)
-    block(scene, M.darkStone, 1.1, 0.18, 1.1, x, 3.0, Z, 0, 1)
-    block(scene, M.darkStone, 0.7, 0.14, 0.7, x, 3.18, Z, 0, 1)
-    statue(scene, M, 'urn', x, Z, 0.07, 3.32)
-    // lantern on an iron bracket, facing the road
-    block(scene, M.iron, 0.06, 0.06, 0.45, x, 2.35, Z + 0.65)
-    const lx = x
-    const lz = Z + 0.85
-    block(scene, M.iron, 0.26, 0.04, 0.26, lx, 2.05, lz)
-    block(scene, M.lanternGlass, 0.18, 0.26, 0.18, lx, 2.09, lz)
-    block(scene, M.iron, 0.3, 0.05, 0.3, lx, 2.35, lz)
-    const f = mesh(scene, new THREE.BoxGeometry(0.05, 0.1, 0.05), M.flame, lx, 2.22, lz)
-    flames.push(f)
-    lamps.push(new THREE.Vector3(lx, 2.2, lz + 0.2))
-  }
-
-  // the two leaves of the gate, hinged at the pillars, opening inwards
-  const leaf = (s: number) => {
-    const g = new THREE.Group()
-    g.position.set(s * HALF, 0, Z)
-    const L = HALF
-    const dir = -s // towards the centre
-    const top = (x: number) => 2.15 + 0.55 * Math.pow(x / L, 1.6)
-    // frame
-    block(g, M.iron, 0.07, top(0.05) + 0.05, 0.07, dir * 0.04, 0.05, 0)
-    block(g, M.iron, 0.07, top(L) - 0.1, 0.07, dir * (L - 0.04), 0.05, 0)
-    for (const y of [0.18, 1.05, 1.95])
-      block(g, M.iron, L, 0.06, 0.06, (dir * L) / 2, y, 0)
-    // bars with spear tips
-    for (let x = 0.14; x < L - 0.05; x += 0.13) {
-      const h = top(x)
-      block(g, M.iron, 0.035, h - 0.1, 0.035, dir * x, 0.1, 0)
-      mesh(
-        g,
-        new THREE.ConeGeometry(0.05, 0.16, 4),
-        M.iron,
-        dir * x,
-        h + 0.05,
-        0,
-        Math.PI / 4,
-      )
-    }
-    // scrollwork between the upper rails
-    for (let x = 0.35; x < L - 0.2; x += 0.42) {
-      const t = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.022, 4, 10), M.iron)
-      t.position.set(dir * x, 1.5, 0)
-      g.add(t)
-      const t2 = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.02, 4, 8), M.iron)
-      t2.position.set(dir * (x + 0.2), 1.27, 0)
-      g.add(t2)
-    }
-    // dog bars and the lock plate where the leaves meet
-    for (let x = 0.08; x < L; x += 0.07)
-      block(g, M.iron, 0.02, 0.32, 0.02, dir * x, 0.0, 0)
-    block(g, M.iron, 0.12, 0.3, 0.08, dir * (L - 0.07), 0.95, 0)
-    scene.add(g)
-    return g
-  }
-  // the arch over the gate with a cross at its peak
-  const arch = new THREE.Group()
-  arch.position.set(0, 0, Z)
-  for (let i = 0; i <= 24; i++) {
-    const t = i / 24
-    const x = -HALF - 0.2 + t * (HALF + 0.2) * 2
-    const y = 3.35 + Math.sin(t * Math.PI) * 0.75
-    block(arch, M.iron, 0.16, 0.05, 0.05, x, y, 0)
-    block(arch, M.iron, 0.16, 0.05, 0.05, x, y - 0.32, 0)
-    if (i % 3 === 0 && i > 0 && i < 24)
-      block(arch, M.iron, 0.03, 0.3, 0.03, x, y - 0.3, 0)
-  }
-  block(arch, M.iron, 0.07, 0.6, 0.07, 0, 4.1, 0)
-  block(arch, M.iron, 0.32, 0.07, 0.07, 0, 4.45, 0)
-  scene.add(arch)
-
-  return { left: leaf(-1), right: leaf(1) }
-}
-
-function buildSignpost(
-  scene: THREE.Scene,
-  M: Mats,
+  hit: (
+    kind: Kind,
+    index: number,
+    at: THREE.Vector3Like,
+    half: [number, number, number],
+    range?: number,
+    rotY?: number,
+  ) => THREE.Mesh,
   lamps: THREE.Vector3[],
   flames: THREE.Object3D[],
 ) {
   const g = new THREE.Group()
-  g.position.set(-1.25, 0, -11.2)
-  // face the walker coming up the path
-  g.rotation.y = yawTo(-1.25, -11.2, 0.75, -8.6) + Math.PI
+  g.position.set(SIGN[0], 0, SIGN[1])
+  g.rotation.y = yawTo(SIGN[0], SIGN[1], 0.75, -8.6) + Math.PI
   scene.add(g)
   block(g, M.wood, 0.14, 2.75, 0.14, 0, 0, 0, 0, 1)
   mesh(g, new THREE.ConeGeometry(0.13, 0.18, 4), M.wood, 0, 2.84, 0, Math.PI / 4)
-
-  const head = tex.lettering('FIND ME', {
-    w: 64,
-    h: 16,
-    bg: '#2a221a',
-    fg: '#e3dac4',
-    size: 15,
+  const head = lambert({
+    map: tex.lettering('FIND ME', {
+      w: 64,
+      h: 16,
+      bg: '#2a221a',
+      fg: '#e3dac4',
+      size: 15,
+    }),
   })
-  const headMat = lambert({ map: head })
-  const headBoard = mesh(
+  mesh(
     g,
     new THREE.BoxGeometry(1.1, 0.3, 0.05),
-    [M.wood, M.wood, M.wood, M.wood, headMat, headMat],
+    [M.wood, M.wood, M.wood, M.wood, head, head],
     0,
     2.45,
     0.09,
   )
-  headBoard.rotation.z = 0.02
-
-  // one arrow per link, pointing every which way
-  const r = tex.rng(3)
+  g.updateMatrixWorld()
   links.forEach((l, i) => {
     const right = i % 2 === 0
-    const t = tex.lettering(l.label.toLowerCase(), {
-      w: 64,
-      h: 16,
-      bg: i % 3 ? '#3b2f22' : '#33291f',
-      fg: '#d9d0ba',
-      size: 13,
-      grain: i + 5,
-    })
-    const face = lambert({ map: t })
-    const shape = new THREE.Shape()
-    const L = 0.82
-    const H = 0.16
-    shape.moveTo(0, -H / 2)
-    shape.lineTo(L - 0.12, -H / 2)
-    shape.lineTo(L, 0)
-    shape.lineTo(L - 0.12, H / 2)
-    shape.lineTo(0, H / 2)
-    shape.closePath()
-    const geo = new THREE.ExtrudeGeometry(shape, { depth: 0.04, bevelEnabled: false })
-    // map the face's UVs to the lettering texture
-    const uv = geo.attributes.uv as THREE.BufferAttribute
-    const pos = geo.attributes.position as THREE.BufferAttribute
-    for (let k = 0; k < uv.count; k++)
-      uv.setXY(k, pos.getX(k) / L, (pos.getY(k) + H / 2) / H)
-    const arrow = new THREE.Mesh(geo, [face, M.wood])
+    const a = arrowBoard(l.label.toLowerCase(), M, i, 0.82)
     const y = 2.12 - i * 0.24
-    arrow.position.set(right ? 0.02 : -0.02, y, 0.075)
-    arrow.scale.x = right ? 1 : -1
-    if (!right) {
-      // mirrored, so flip the text back the right way round
-      const flipped = t.clone()
-      flipped.repeat.x = -1
-      flipped.offset.x = 1
-      flipped.wrapS = THREE.RepeatWrapping
-      flipped.needsUpdate = true
-      arrow.material = [lambert({ map: flipped }), M.wood]
-    }
-    arrow.rotation.z = (r() - 0.5) * 0.08
-    arrow.rotation.y = (r() - 0.5) * 0.25
-    g.add(arrow)
+    a.position.set(0, y, 0.075)
+    a.rotation.y = right ? 0 : Math.PI
+    a.rotation.z = (((i * 5 + 1) % 5) - 2) * 0.02
+    g.add(a)
+    const local = new THREE.Vector3(right ? 0.45 : -0.45, y, 0.075)
+    const world = local.applyMatrix4(g.matrixWorld)
+    hit('link', i, world, [0.45, 0.11, 0.12], 3.2, g.rotation.y)
   })
-
-  // a lantern hung from the post so you can read it
   block(g, M.iron, 0.4, 0.04, 0.04, 0.2, 2.62, 0)
   block(g, M.iron, 0.2, 0.03, 0.2, 0.4, 2.3, 0)
   block(g, M.lanternGlass, 0.14, 0.2, 0.14, 0.4, 2.33, 0)
-  const f = mesh(g, new THREE.BoxGeometry(0.04, 0.08, 0.04), M.flame, 0.4, 2.42, 0)
-  flames.push(f)
+  flames.push(mesh(g, new THREE.BoxGeometry(0.04, 0.08, 0.04), M.flame, 0.4, 2.42, 0))
   g.updateMatrixWorld()
   lamps.push(new THREE.Vector3(0.4, 2.3, 0.4).applyMatrix4(g.matrixWorld))
 }
 
+/** A chunky old CRT monitor, its screen showing a live texture. */
+function monitor(screen: THREE.Texture, plastic: THREE.Material) {
+  const g = new THREE.Group()
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.46, 0.34), plastic)
+  g.add(body)
+  const back = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.32, 0.22), plastic)
+  back.position.z = -0.27
+  g.add(back)
+  const glass = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.46, 0.345),
+    basic({ map: screen }),
+  )
+  glass.position.z = 0.172
+  g.add(glass)
+  const led = new THREE.Mesh(
+    new THREE.BoxGeometry(0.02, 0.02, 0.01),
+    basic({ color: 0x5ce07a }),
+  )
+  led.position.set(0.22, -0.2, 0.172)
+  g.add(led)
+  return g
+}
+
+/** A cassette walkman with its headphones wrapped round it. */
+function walkmanModel(lcd: THREE.Texture) {
+  const g = new THREE.Group()
+  const shell = lambert({ color: 0x2e3a4a })
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.28, 0.06), shell)
+  g.add(body)
+  const window_ = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.15, 0.09),
+    basic({ color: 0x0b0d10 }),
+  )
+  window_.position.set(0, 0.03, 0.031)
+  g.add(window_)
+  for (const x of [-0.035, 0.035]) {
+    const reel = new THREE.Mesh(
+      new THREE.CircleGeometry(0.018, 8),
+      basic({ color: 0x8c8678 }),
+    )
+    reel.position.set(x, 0.03, 0.032)
+    g.add(reel)
+  }
+  const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.047), basic({ map: lcd }))
+  screen.position.set(0, -0.075, 0.031)
+  g.add(screen)
+  const buttons = lambert({ color: 0x9a9fa8 })
+  for (let i = 0; i < 4; i++) {
+    const b = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.02, 0.03), buttons)
+    b.position.set(-0.06 + i * 0.04, 0.15, 0)
+    g.add(b)
+  }
+  const phones = new THREE.Mesh(
+    new THREE.TorusGeometry(0.13, 0.012, 4, 14, Math.PI * 1.3),
+    lambert({ color: 0x1a1a1c }),
+  )
+  phones.position.set(0, 0.06, -0.04)
+  phones.rotation.z = -0.4
+  g.add(phones)
+  for (const x of [-0.12, 0.1]) {
+    const cup = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.04, 0.04, 0.025, 8),
+      lambert({ color: 0xb04a2a }),
+    )
+    cup.rotation.x = Math.PI / 2
+    cup.position.set(x, x < 0 ? -0.02 : 0.15, -0.045)
+    g.add(cup)
+  }
+  return g
+}
+
+/** A monument for one project: obelisk, stele, broken column or sarcophagus. */
+function monument(
+  scene: THREE.Scene,
+  M: Mats,
+  i: number,
+  text: string,
+  x: number,
+  z: number,
+  ry: number,
+) {
+  const g = new THREE.Group()
+  g.position.set(x, 0, z)
+  g.rotation.y = ry
+  scene.add(g)
+  const plaque = (w: number, h: number, y: number, zf: number) => {
+    const t = tex.lettering(text, {
+      w: 96,
+      h: 40,
+      bg: '#5f5d57',
+      fg: '#e0dccf',
+      carved: true,
+      size: 19,
+      grain: i + 9,
+    })
+    mesh(g, new THREE.PlaneGeometry(w, h), lambert({ map: t }), 0, y, zf)
+  }
+  let half: [number, number] = [0.7, 0.7]
+  switch (i % 4) {
+    case 0: {
+      // an obelisk
+      block(g, M.stone, 1.4, 0.3, 1.4, 0, 0, 0, 0, 1)
+      block(g, M.marble, 1.1, 0.7, 1.1, 0, 0.3, 0, 0, 1)
+      const shaft = tile(new THREE.CylinderGeometry(0.24, 0.36, 3.6, 4), 1, 3)
+      mesh(g, shaft, M.marble, 0, 1.0 + 1.8, 0, Math.PI / 4)
+      mesh(g, new THREE.ConeGeometry(0.26, 0.45, 4), M.marble, 0, 4.82, 0, Math.PI / 4)
+      plaque(0.95, 0.4, 0.65, 0.555)
+      half = [0.7, 0.7]
+      break
+    }
+    case 1: {
+      // a tall stele with a rounded top
+      block(g, M.stone, 2.0, 0.3, 0.8, 0, 0, 0, 0, 1)
+      const s = new THREE.Shape()
+      s.moveTo(-0.85, 0)
+      s.lineTo(0.85, 0)
+      s.lineTo(0.85, 1.75)
+      s.absarc(0, 1.75, 0.85, 0, Math.PI, false)
+      s.closePath()
+      const geo = new THREE.ExtrudeGeometry(s, {
+        depth: 0.36,
+        bevelEnabled: false,
+        curveSegments: 6,
+      })
+      geo.translate(0, 0, -0.18)
+      tile(geo, 0.8, 0.8)
+      mesh(g, geo, M.stone, 0, 0.3, 0)
+      plaque(1.4, 0.58, 1.55, 0.185)
+      half = [1.0, 0.45]
+      break
+    }
+    case 2: {
+      // a broken column
+      block(g, M.stone, 1.3, 1.0, 1.3, 0, 0, 0, 0, 1)
+      mesh(
+        g,
+        tile(new THREE.CylinderGeometry(0.34, 0.36, 2.1, 8), 2, 2),
+        M.marble,
+        0,
+        1.0 + 1.05,
+        0,
+      )
+      const top = new THREE.Mesh(
+        tile(new THREE.CylinderGeometry(0.34, 0.34, 0.5, 8), 2, 0.5),
+        M.marble,
+      )
+      top.position.set(0.05, 3.22, 0)
+      top.rotation.z = 0.35
+      g.add(top)
+      const fallen = new THREE.Mesh(
+        tile(new THREE.CylinderGeometry(0.33, 0.33, 1.2, 8), 2, 1),
+        M.marble,
+      )
+      fallen.position.set(1.05, 0.33, -0.3)
+      fallen.rotation.set(Math.PI / 2, 0.6, 0)
+      g.add(fallen)
+      plaque(1.05, 0.44, 0.55, 0.655)
+      half = [1.2, 0.75]
+      break
+    }
+    default: {
+      // a sarcophagus
+      block(g, M.stone, 2.2, 0.85, 1.05, 0, 0, 0, 0, 1)
+      block(g, M.marble, 2.4, 0.16, 1.2, 0, 0.85, 0, 0, 1)
+      const tri = new THREE.Shape()
+      tri.moveTo(-0.6, 0)
+      tri.lineTo(0.6, 0)
+      tri.lineTo(0, 0.28)
+      tri.closePath()
+      const ridge = new THREE.ExtrudeGeometry(tri, { depth: 2.3, bevelEnabled: false })
+      ridge.translate(0, 0, -1.15)
+      ridge.rotateY(Math.PI / 2)
+      mesh(g, ridge, M.marble, 0, 1.01, 0)
+      plaque(1.6, 0.6, 0.45, 0.53)
+      half = [1.25, 0.65]
+    }
+  }
+  return { half }
+}
+
+/** The mausoleum, at the back of the yard, its front to the monuments. */
 function buildMausoleum(
   scene: THREE.Scene,
   M: Mats,
@@ -1054,21 +1138,18 @@ function buildMausoleum(
   glassMat: () => THREE.MeshBasicMaterial,
 ) {
   const g = new THREE.Group()
-  g.position.set(28, 0, -30)
-  // its front faces the walk (-x)
+  g.position.set(MAUSOLEUM[0], 0, MAUSOLEUM[1])
   g.rotation.y = -Math.PI / 2
   scene.add(g)
-  // local: front towards +z, width along x
   block(g, M.stone, 5.2, 0.5, 6.8, 0, 0, -0.4, 0, 2)
   block(g, M.stone, 4.6, 3.9, 5.2, 0, 0.5, -1.2, 0, 2)
-  // portico columns and steps
   for (const x of [-1.95, -0.95, 0.95, 1.95]) {
     mesh(
       g,
       tile(new THREE.CylinderGeometry(0.2, 0.24, 3.5, 8), 1.4, 3.5),
       M.marble,
       x,
-      0.5 + 1.75,
+      2.25,
       2.3,
     )
     block(g, M.stone, 0.55, 0.2, 0.55, x, 0.5, 2.3, 0, 1)
@@ -1077,7 +1158,6 @@ function buildMausoleum(
   for (let i = 0; i < 3; i++)
     block(g, M.stone, 4.8, 0.17, 0.45, 0, 0.5 - (i + 1) * 0.17, 2.85 + i * 0.4, 0, 1)
   block(g, M.darkStone, 5.0, 0.35, 6.3, 0, 4.0, -0.35, 0, 2)
-  // pediment: a triangular prism over the front
   const tri = new THREE.Shape()
   tri.moveTo(-2.6, 0)
   tri.lineTo(2.6, 0)
@@ -1087,14 +1167,12 @@ function buildMausoleum(
   ped.translate(0, 0, -3.5)
   mesh(g, ped, M.darkStone, 0, 4.35, 0)
   statue(g, M, 'angel', 0, 2.6, 0.04, 5.6)
-  // the doorway: darkness, iron bars, a candle somewhere inside
   block(g, M.void, 1.5, 2.6, 0.1, 0, 0.5, 1.42)
   for (let x = -0.68; x <= 0.7; x += 0.17) block(g, M.iron, 0.04, 2.55, 0.04, x, 0.5, 1.5)
   for (const y of [1.0, 2.0, 2.9]) block(g, M.iron, 1.5, 0.05, 0.05, 0, y, 1.5)
   block(g, M.flame, 0.05, 0.08, 0.05, 0.3, 1.1, 0.9)
-  // stained glass up in the side walls
-  for (const s of [-1, 1]) {
-    const w = mesh(
+  for (const s of [-1, 1])
+    mesh(
       g,
       new THREE.PlaneGeometry(0.5, 1.2),
       glassMat(),
@@ -1103,18 +1181,6 @@ function buildMausoleum(
       -1.2,
       (s * Math.PI) / 2,
     )
-    w.rotation.y = (s * Math.PI) / 2
-  }
-  const t = tex.lettering('RELIQVIAE', {
-    w: 64,
-    h: 12,
-    bg: '#55544f',
-    fg: '#cfccc2',
-    carved: true,
-    size: 11,
-  })
-  mesh(g, new THREE.PlaneGeometry(2.6, 0.48), lambert({ map: t }), 0, 3.55, 1.42)
-  // praying angels either side of the steps, and a lantern by the door
   statue(g, M, 'angel', -2.9, 3.7, 0.045, 0.7, M.stone)
   statue(g, M, 'angel', 2.9, 3.7, 0.045, 0.7, M.stone)
   const f = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.1, 0.05), M.flame)
@@ -1125,190 +1191,4 @@ function buildMausoleum(
   flames.push(f)
   g.updateMatrixWorld()
   lamps.push(new THREE.Vector3(1.15, 2.2, 2.2).applyMatrix4(g.matrixWorld))
-}
-
-function grave(
-  scene: THREE.Scene,
-  M: Mats,
-  x: number,
-  z: number,
-  r: () => number,
-  epitaph: THREE.Material,
-) {
-  const g = new THREE.Group()
-  g.position.set(x, 0, z)
-  g.rotation.y = Math.PI / 2 + (r() - 0.5) * 0.4
-  g.rotation.z = (r() - 0.5) * 0.14
-  g.rotation.x = (r() - 0.5) * 0.12
-  const kind = r()
-  const mat = r() < 0.5 ? M.stone : M.marble
-  if (kind < 0.45) {
-    // rounded headstone
-    const w = 0.55 + r() * 0.25
-    const h = 0.7 + r() * 0.5
-    const s = new THREE.Shape()
-    s.moveTo(-w / 2, 0)
-    s.lineTo(w / 2, 0)
-    s.lineTo(w / 2, h - w / 2)
-    s.absarc(0, h - w / 2, w / 2, 0, Math.PI, false)
-    s.closePath()
-    const geo = new THREE.ExtrudeGeometry(s, {
-      depth: 0.14,
-      bevelEnabled: false,
-      curveSegments: 4,
-    })
-    const uv = geo.attributes.uv as THREE.BufferAttribute
-    for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * 1.2, uv.getY(i) * 1.2)
-    geo.translate(0, 0, -0.07)
-    g.add(new THREE.Mesh(geo, mat))
-    if (r() < 0.5) {
-      const p = new THREE.Mesh(new THREE.PlaneGeometry(w * 0.8, w * 0.4), epitaph)
-      p.position.set(0, h * 0.55, 0.075)
-      g.add(p)
-    }
-  } else if (kind < 0.75) {
-    // a cross
-    const h = 1.0 + r() * 0.6
-    block(g, mat, 0.12, h, 0.12, 0, 0, 0, 0, 1)
-    block(g, mat, 0.55, 0.12, 0.12, 0, h * 0.68, 0, 0, 1)
-    block(g, M.stone, 0.4, 0.2, 0.3, 0, 0, 0, 0, 1)
-  } else if (kind < 0.88) {
-    // an obelisk
-    const h = 1.6 + r() * 1.2
-    block(g, M.stone, 0.6, 0.35, 0.6, 0, 0, 0, 0, 1)
-    block(g, mat, 0.32, h, 0.32, 0, 0.35, 0, 0, 1)
-    mesh(
-      g,
-      new THREE.ConeGeometry(0.24, 0.35, 4),
-      mat,
-      0,
-      0.35 + h + 0.17,
-      0,
-      Math.PI / 4,
-    )
-  } else {
-    // a sunken slab with a small headstone
-    block(g, M.darkStone, 0.9, 0.12, 1.8, 0, 0, 0.9, 0, 1)
-    block(g, mat, 0.6, 0.6, 0.12, 0, 0, 0, 0, 1)
-  }
-  scene.add(g)
-}
-
-function cypress(scene: THREE.Scene, M: Mats, x: number, z: number, h: number) {
-  const g = new THREE.Group()
-  g.position.set(x, 0, z)
-  block(g, M.bark, 0.25, 1, 0.25, 0, 0, 0)
-  const body = new THREE.Mesh(new THREE.ConeGeometry(h * 0.16, h, 6, 3), M.cypress)
-  body.position.y = 0.8 + h / 2
-  g.add(body)
-  const r2 = new THREE.Mesh(new THREE.ConeGeometry(h * 0.19, h * 0.55, 6, 2), M.cypress)
-  r2.position.y = 0.8 + h * 0.3
-  r2.rotation.y = 0.5
-  g.add(r2)
-  scene.add(g)
-}
-
-function deadTree(scene: THREE.Scene, M: Mats, x: number, z: number, r: () => number) {
-  const g = new THREE.Group()
-  g.position.set(x, 0, z)
-  const branch = (parent: THREE.Object3D, len: number, rad: number, depth: number) => {
-    const geo = new THREE.CylinderGeometry(rad * 0.65, rad, len, 4)
-    geo.translate(0, len / 2, 0)
-    const m = new THREE.Mesh(geo, M.bark)
-    parent.add(m)
-    if (depth <= 0) return m
-    const n = 2 + Math.floor(r() * 2)
-    for (let i = 0; i < n; i++) {
-      const c = branch(m, len * (0.55 + r() * 0.2), rad * 0.6, depth - 1)
-      c.position.y = len * (0.6 + r() * 0.4)
-      c.rotation.z = (r() - 0.5) * 1.6
-      c.rotation.y = r() * Math.PI * 2
-    }
-    return m
-  }
-  branch(g, 2.6 + r() * 1.5, 0.22, 3)
-  g.rotation.y = r() * 6
-  scene.add(g)
-}
-
-/** The cathedral, far off: a black mass against the storm with lit windows. */
-function cathedral(
-  scene: THREE.Scene,
-  glassMat: (fog?: boolean) => THREE.MeshBasicMaterial,
-) {
-  const g = new THREE.Group()
-  g.position.set(-4, -2, -118)
-  scene.add(g)
-  const body = basic({ color: 0x0c0d11, fog: false })
-  const dark = basic({ color: 0x08090c, fog: false })
-  const window = glassMat(false)
-  const box = (
-    w: number,
-    h: number,
-    d: number,
-    x: number,
-    y: number,
-    z: number,
-    m = body,
-  ) => mesh(g, new THREE.BoxGeometry(w, h, d), m, x, y + h / 2, z)
-  // nave and its roof
-  box(18, 26, 50, 0, 0, -25)
-  const roof = new THREE.Shape()
-  roof.moveTo(-9.5, 0)
-  roof.lineTo(9.5, 0)
-  roof.lineTo(0, 11)
-  roof.closePath()
-  const rg = new THREE.ExtrudeGeometry(roof, { depth: 50, bevelEnabled: false })
-  rg.translate(0, 26, -50)
-  mesh(g, rg, dark)
-  // aisles and buttresses
-  box(30, 14, 46, 0, 0, -27, dark)
-  for (let i = 0; i < 6; i++)
-    for (const s of [-1, 1]) {
-      box(1.6, 20, 3, s * 15.5, 0, -8 - i * 7.5)
-      mesh(
-        g,
-        new THREE.ConeGeometry(1.2, 6, 4),
-        dark,
-        s * 15.5,
-        23,
-        -8 - i * 7.5,
-        Math.PI / 4,
-      )
-    }
-  // twin towers with spires
-  for (const s of [-1, 1]) {
-    box(9, 46, 9, s * 11, 0, 0)
-    mesh(g, new THREE.ConeGeometry(6.6, 30, 4), dark, s * 11, 46 + 15, 0, Math.PI / 4)
-    for (const c of [-1, 1])
-      mesh(
-        g,
-        new THREE.ConeGeometry(0.9, 6, 4),
-        dark,
-        s * 11 + c * 4.2,
-        49,
-        4.2,
-        Math.PI / 4,
-      )
-    // tall lancet windows in the towers
-    for (const y of [12, 28])
-      mesh(g, new THREE.PlaneGeometry(2.2, 9), window, s * 11, y + 4.5, 4.55)
-  }
-  // rose window and the great door
-  const rose = new THREE.Mesh(new THREE.CircleGeometry(4.2, 16), window)
-  rose.position.set(0, 30, 0.05)
-  g.add(rose)
-  mesh(g, new THREE.PlaneGeometry(4, 9), window, 0, 6.5, 0.05)
-  // side windows down the nave
-  for (let i = 0; i < 6; i++)
-    for (const s of [-1, 1])
-      mesh(
-        g,
-        new THREE.PlaneGeometry(2, 6),
-        window,
-        s * 9.05,
-        18,
-        -10 - i * 7.5,
-        (s * Math.PI) / 2,
-      )
 }

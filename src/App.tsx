@@ -2,7 +2,6 @@ import { AnimatePresence, motion, MotionConfig } from 'motion/react'
 import { useCallback, useEffect, useState } from 'react'
 import { Route, Routes, useLocation } from 'react-router'
 import { MiniPlayer } from '@/components/MiniPlayer'
-import { Nav } from '@/components/Nav'
 import { PixelCross } from '@/components/PixelCross'
 import { Cursor } from '@/fx/Cursor'
 import { ResurfaceOverlay } from '@/fx/Resurface'
@@ -15,9 +14,9 @@ import { worldStore } from '@/world/state'
 import { World } from '@/world/World'
 
 /**
- * The site is a place: a first-person walk through a churchyard at night
- * (World). Each section is something you can stop and look at along the path.
- * Notes open as pages over the world. Without WebGL it falls back to a plain
+ * The site is a place: a churchyard at night you walk around in (World). Each
+ * section is something in it you can walk up to and use. Notes open as pages
+ * over the world. Without WebGL it falls back to a plain
  * page with the same sections (Plain).
  */
 export default function App() {
@@ -43,7 +42,6 @@ export default function App() {
     <MotionConfig reducedMotion="user">
       {mode === 'failed' ? <Plain /> : <World />}
       <Cursor />
-      <Nav />
       <Routes location={location}>
         <Route path="/" element={null} />
         <Route path="/notes/:slug" element={<NotePage />} />
@@ -64,7 +62,8 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
-      <MiniPlayer />
+      {/* in the churchyard, the walkman you can pick up is the player */}
+      {mode === 'failed' && <MiniPlayer />}
       <ResurfaceOverlay />
     </MotionConfig>
   )
