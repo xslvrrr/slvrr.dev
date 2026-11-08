@@ -64,7 +64,7 @@ export function Cursor() {
         transition={{ type: 'spring', stiffness: 400, damping: 28 }}
       >
         {hover ? (
-          <span className="font-mono text-[9px] uppercase tracking-wider text-black">
+          <span className="font-mono text-sm uppercase leading-none tracking-wider text-black">
             {hover}
           </span>
         ) : null}

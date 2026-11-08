@@ -4,7 +4,7 @@ import type { MDXComponents } from 'mdx/types'
 export const mdxComponents: MDXComponents = {
   h2: (p) => (
     <h2
-      className="mt-14 mb-4 font-display text-4xl leading-none text-stone-1 md:text-5xl"
+      className="mt-14 mb-4 font-display text-4xl leading-none text-fg md:text-5xl"
       {...p}
     />
   ),
@@ -33,7 +33,7 @@ export const mdxComponents: MDXComponents = {
   ),
   pre: (p) => (
     <pre
-      className="panel my-8 overflow-x-auto p-5 font-mono text-sm leading-relaxed"
+      className="panel my-8 overflow-x-auto p-5 font-mono text-base leading-relaxed"
       {...p}
     />
   ),

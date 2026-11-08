@@ -1,13 +1,6 @@
 @import 'tailwindcss';
 @import './tokens.css';
 
-/* Wide screens explore the garden sideways (keep in sync with src/lib/explore.ts). */
-@custom-variant explore {
-  @media (min-width: 1024px) and (min-height: 600px) {
-    @slot;
-  }
-}
-
 @layer base {
   html {
     color-scheme: dark;
@@ -21,17 +14,11 @@
     text-rendering: optimizeLegibility;
   }
 
-  html.lenis,
-  html.lenis body {
-    height: auto;
-  }
-  .lenis:not(.lenis-autoToggle).lenis-stopped {
-    overflow: clip;
-  }
-
+  /* The world is a fixed, full-screen scene; panels scroll inside themselves. */
   body {
     min-height: 100svh;
-    overflow-x: clip;
+    overflow: hidden;
+    overscroll-behavior: none;
   }
 
   img {
@@ -112,14 +99,14 @@
 
   /*
    * A pixel-art stone frame: dark outline, a stone inner line, notched corners
-   * and a gold rivet in each corner. Drawn as a 12×12 SVG nine-slice where one
+   * and a bone rivet in each corner, filled nearly opaque so text reads cleanly. Drawn as a 12×12 SVG nine-slice where one
    * unit is 2 CSS pixels. No backdrop-filter: blurring the animated scene
    * behind every panel each frame is too expensive.
    */
   .panel {
     position: relative;
     border: 8px solid transparent;
-    border-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' shape-rendering='crispEdges'%3E%3Cpath fill='rgba(0,0,0,.75)' d='M2 0h8v1H2zM0 2h1v8H0zM11 2h1v8h-1zM2 11h8v1H2zM1 1h1v1H1zM10 1h1v1h-1zM1 10h1v1H1zM10 10h1v1h-1z'/%3E%3Cpath fill='%233a3a3e' d='M2 1h8v1H2zM1 2h1v8H1zM10 2h1v8h-1zM2 10h8v1H2z'/%3E%3Cpath fill='rgba(10,9,17,.88)' d='M2 2h8v8H2z'/%3E%3Cpath fill='%23cfccc5' d='M2 2h1v1H2zM9 2h1v1H9zM2 9h1v1H2zM9 9h1v1H9z'/%3E%3C/svg%3E")
+    border-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' shape-rendering='crispEdges'%3E%3Cpath fill='rgba(0,0,0,.75)' d='M2 0h8v1H2zM0 2h1v8H0zM11 2h1v8h-1zM2 11h8v1H2zM1 1h1v1H1zM10 1h1v1h-1zM1 10h1v1H1zM10 10h1v1h-1z'/%3E%3Cpath fill='%233a3a3e' d='M2 1h8v1H2zM1 2h1v8H1zM10 2h1v8h-1zM2 10h8v1H2z'/%3E%3Cpath fill='rgba(9,9,11,.94)' d='M2 2h8v8H2z'/%3E%3Cpath fill='%23cfccc5' d='M2 2h1v1H2zM9 2h1v1H9zM2 9h1v1H2zM9 9h1v1H9z'/%3E%3C/svg%3E")
       4 fill / 8px stretch;
   }
 
@@ -236,54 +223,46 @@
 
   .eyebrow {
     font-family: var(--font-mono);
-    font-size: 0.6875rem;
-    letter-spacing: 0.12em;
+    font-size: 1.125rem;
+    line-height: 1.1;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--color-fg-muted);
-  }
-
-  /* Everything in a section gets a hard pixel shadow, so it reads over the scene.
-     Gradient-filled text can't take one (it would paint over the fill). */
-  .section {
-    text-shadow: 2px 2px 0 rgb(0 0 0 / 0.75);
-  }
-  .section :is(.text-stone, .text-gilt, .text-glass, .shimmer, .text-stone [data-word]) {
-    text-shadow: none;
-  }
-
-  .section {
-    position: relative;
-    padding-block: var(--section-pad);
-    padding-inline: clamp(1rem, 5vw, 4rem);
-    max-width: 88rem;
-    margin-inline: auto;
-  }
-
-  /* While exploring, each section is a screen-tall stop along the walk, as
-     wide as its content, with its landmark standing in a gap (<Landmark/>). */
-  @media (min-width: 1024px) and (min-height: 600px) {
-    .section {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      flex-shrink: 0;
-      width: max-content;
-      max-width: none;
-      height: 100svh;
-      margin: 0;
-      padding: 5.5rem 4vw 3.5rem;
-    }
   }
 
   .section-title {
     font-family: var(--font-display);
     font-weight: 400;
-    font-size: clamp(3rem, 9vw, 7rem);
-    @media (min-width: 1024px) and (min-height: 600px) {
-      font-size: clamp(3rem, 11vh, 6.5rem);
+    font-size: clamp(3rem, 7vw, 4.75rem);
+    line-height: 0.9;
+    letter-spacing: 0.01em;
+    color: var(--color-fg);
+    text-shadow: 0.05em 0.05em 0 rgb(0 0 0 / 0.9);
+  }
+
+  /* The reading panel: under the thing you're looking at on phones, beside it
+     on wide screens (the engine shifts the view to match, at 900px). */
+  .reader {
+    inset: 34svh 0.5rem 0.5rem;
+  }
+  @media (min-width: 640px) {
+    .reader {
+      inset-inline: 1.5rem;
     }
-    line-height: 0.95;
-    letter-spacing: 0;
+  }
+  @media (min-width: 900px) {
+    .reader {
+      inset: 11vh 4vw 6vh auto;
+      width: min(44rem, 48vw);
+      padding-inline: 2rem;
+    }
+  }
+
+  /* The reading panel's scrollbar: a thin bone bar in a dark groove. */
+  .reader,
+  [data-reader] {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-fg-faint) transparent;
   }
 }
 

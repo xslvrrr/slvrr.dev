@@ -1,13 +1,17 @@
 # slvrr.dev
 
-A personal landing page in the style of carrd / guns.lol, with a lot more going on. **V2
-("vespers")** is monochrome pixel-art gothic: a walk through a night garden around a cathedral,
-in a storm. On wide screens you scroll sideways past statues and landmarks, one per section,
-with rain, fog, lightning you can call down, candlelit windows, a magnifying link dock, live Discord presence, Last.fm "now playing",
-project cards with a glassy tilt, MDX notes and a few secrets.
+A personal landing page in the style of carrd / guns.lol, with a lot more going on. **V3** is a
+place rather than a page: a first-person walk through a churchyard at night, rendered small and
+pixelated like a late-90s console game. You push open the iron garden gates and follow a path
+between clipped hedges, and each section of the site is something along the way that you stop and
+look at: a signpost, a fountain, a mausoleum, a shrine, old graves, a calvary, with the cathedral
+looming over all of it. There's rain, ground mist, lightning, lanterns, head bob, footsteps in wet
+grass and an ambience bed, all synthesized. Nothing jumps out at you; it's the map of a horror game
+with the horror taken out.
 
-Built with **Vite + React + TypeScript**, **Tailwind CSS v4**, **Motion**, **WebGL**, **Lenis** and
-**MDX**. Deployed on **Vercel**. (V1, the liquid-chrome version, is in the git history before the V2 redesign.)
+Built with **Vite + React + TypeScript**, **three.js**, **Tailwind CSS v4**, **Motion** and
+**MDX**. Deployed on **Vercel**. (V1, liquid chrome, and V2, the side-scrolling garden, are in the
+git history.)
 
 ```bash
 npm install
@@ -19,20 +23,20 @@ npm run format     # prettier
 
 ## Where to change what
 
-| I want to change…                  | Edit                                             |
-| ---------------------------------- | ------------------------------------------------ |
-| Name, tagline, bio, rotating words | `src/content/profile.ts`                         |
-| Social links (and dock order)      | `src/content/links.ts`                           |
-| Projects                           | `src/content/projects.ts`                        |
-| Timeline                           | `src/content/timeline.ts`                        |
-| Favourite albums / games / shows   | `src/content/media.ts`, then `npm run covers`    |
-| Section headings, footer lines     | `src/content/copy.ts`                            |
-| Write a note                       | add `src/content/notes/<slug>.mdx` with a `meta` |
-| Colors, fonts, radii, easing       | `src/styles/tokens.css`                          |
-| The garden, landmarks, cathedral   | `src/scene/` (see below)                         |
-| Statues                            | `src/scene/sprites.ts`                           |
-| Weather / sky per section          | `src/styles/backgroundThemes.ts`                 |
-| Section order                      | `src/pages/Home.tsx`                             |
+| I want to change…                   | Edit                                             |
+| ----------------------------------- | ------------------------------------------------ |
+| Name, tagline, bio, rotating words  | `src/content/profile.ts`                         |
+| Social links (and dock order)       | `src/content/links.ts`                           |
+| Projects                            | `src/content/projects.ts`                        |
+| Timeline                            | `src/content/timeline.ts`                        |
+| Favourite albums / games / shows    | `src/content/media.ts`, then `npm run covers`    |
+| Section headings, footer lines      | `src/content/copy.ts`                            |
+| Write a note                        | add `src/content/notes/<slug>.mdx` with a `meta` |
+| Colors, fonts, radii, easing        | `src/styles/tokens.css`                          |
+| The path, places, weather per place | `src/world/stations.ts`                          |
+| The churchyard itself               | `src/world/build.ts`                             |
+| Statues                             | `src/world/sprites.ts`                           |
+| Sounds                              | `src/lib/sfx.ts`                                 |
 
 All copy lives in `src/content/`. The bio and section headings are drafts, so rewrite them freely.
 
@@ -44,66 +48,70 @@ else, add an `art` URL to the item. Existing files are kept, so delete one to re
 `swatch: '#hex'` instead to use a flat colour as the cover (like solace's pink). Items without a
 cover show a generated tile. Covers sit in 3D jewel cases (`src/fx/JewelCase.tsx`).
 
-### The garden walk
+### The churchyard
 
-The home page is a walk through a night garden around a cathedral. Each section is a stop at a
-**landmark** (its `data-landmark` attribute):
+The whole site is one fixed, full-screen three.js scene (`src/world/`). There is no page scroll.
 
-| Section | Landmark                                    |
-| ------- | ------------------------------------------- |
-| Hero    | `gate`: the churchyard gate, lanterns lit   |
-| Links   | `herald`: an angel sounding a trumpet       |
-| Music   | `fountain`: a fountain with a cherub        |
-| Work    | `mausoleum`: where the relics are kept      |
-| About   | `shrine`: a Madonna, candles, a hooded monk |
-| Notes   | `graves`: a weeping angel on a tomb         |
-| Footer  | `calvary`: a tall cross between two angels  |
+**Walking.** The path (`PATH` in `src/world/stations.ts`) runs from outside the gate to the foot
+of the calvary, with stations along it. Click either **wedge** at the edges of the screen (they
+point in towards the vanishing point, like the hedges) to walk on to the next station; the low one
+at the bottom turns you back. Scrolling, `W`/`S` and the arrow keys work too. The camera glides
+round the corners, bobs with each stride, and every stride plays a footstep.
 
-On wide screens (≥1024×600, see `EXPLORE_QUERY` in `src/lib/explore.ts` and the `explore:`
-Tailwind variant) the page is a **side-scroller**: `src/components/ExploreTrack.tsx` lays the
-sections side by side and scrolling (or swiping sideways) walks you along them. Each section
-leaves a gap (`<Landmark />`) where its landmark stands in the garden, and the garden moves
-exactly with the content. On phones the page stays vertical and the background walks from
-landmark to landmark between sections instead.
+**Looking.** Most stations have a point of interest beside the path. Hover it for its label, click
+it (or press `E`) and you turn to face it while its section opens in a panel beside it (below it
+on phones). `Esc`, "step back" or clicking the world turns you back to the path. The URL hash
+follows what you're looking at, so `/#work` walks you to the mausoleum and back/forward work.
 
-The scene (`src/fx/NightScene.tsx`) is drawn as big crisp pixels (one scene pixel is 2–5 CSS
-pixels, so the screen is ~250 scene pixels tall), in greys:
+| Station   | Point of interest                           | Section                     |
+| --------- | ------------------------------------------- | --------------------------- |
+| gate      | the iron garden gates (title screen)        | name, tagline, roles        |
+| entry     | the hedge walk                              | (none)                      |
+| sign      | a signpost on the left, before the 1st turn | Links + Discord             |
+| fountain  | a fountain with a cherub, in a clearing     | Music                       |
+| mausoleum | where the relics are kept                   | Work                        |
+| shrine    | a Madonna in a niche, candles, a monk       | About                       |
+| graves    | a weeping angel on a tomb                   | Notes                       |
+| calvary   | a tall cross between two angels             | Footer ("back to the gate") |
 
-- **Sky**: storm clouds posterized into four bands with ordered (Bayer) dithering, stars in the
-  gaps, a moon that lights the cloud edges.
-- **Three parallax layers**, drawn procedurally by `src/scene/buildScene.ts`: the far cathedral
-  (`cathedral.ts`) over a distant tree line; the garden, as wide as the walk, with each landmark
-  (at double size) and statues, lamps, graves and cypresses in between; and dark foreground
-  silhouettes that sweep past faster. Pixels store _materials_, not colours (see
-  `src/scene/layers.ts`), so the shader can light them: moonlight on edges facing the moon,
-  flickering candlelit glass, falling water, lightning outlining everything.
-- **Statues** are hand-drawn pixel sprites in `src/scene/sprites.ts` (praying angel, herald,
-  weeper, monk, Madonna, cherub, bust, urn). Add one there and place it in `buildScene.ts`.
-- **Weather**: two layers of pixel rain, ground fog, lightning. Click the hero to call a strike
-  down (with thunder, if sound is on); the storm also strikes on its own. Each section's
-  `data-bg` theme in `src/styles/backgroundThemes.ts` sets its sky, rain, storm (strikes per
-  minute), cloud cover, fog, candlelight and wind, blended as you walk.
+Each station also sets the **weather** around it (rain, fog density, lightning per minute, wind),
+blended as you walk. Notes (`/notes/:slug`) open as a reading panel with the world behind, at the
+graves.
 
-In `npm run dev`, call `strike()` in the console to test the lightning.
+**How it looks.** `src/world/engine.ts` renders the scene at ~260 rows (one scene pixel is 2–4 CSS
+pixels), then a post pass (`post.ts`) quantizes it with an ordered dither, adds a vignette and
+grain, and the canvas is scaled up with nearest-neighbour. Vertices snap to a coarse screen grid
+(`materials.ts`), so geometry wobbles very slightly, PS1-style. Textures are painted pixel by pixel
+at load (`textures.ts`), including the lettering on the signs. Statues are the pixel-art sprites in
+`sprites.ts`, extruded into voxel sculptures that swell towards the middle (`voxel.ts`). You carry a
+lantern (a flickering light at your hip); the nearest lamps and candles share a small pool of real
+lights. Sky, clouds, moon and rain are shaders in `sky.ts`.
 
-The site is monochrome: photos (album covers, avatars) stay grey until hovered. Fonts are
-**Jacquard 24** (pixel blackletter) for display, **Pixelify Sans** for reading and
-**Silkscreen** for labels. Panels use a pixel-art nine-slice frame (`.panel` in
-`src/styles/index.css`).
+**Type.** **Jersey 10** (a chunky pixel face) for display, **Pixelify Sans** for reading and
+**VT323** for labels and prompts, like a game's subtitles: all bone on ink, so text stays legible
+over the dark scene.
+
+**Sound.** Everything is synthesized in `src/lib/sfx.ts`: footsteps in wet grass (heel strike, toe
+roll, blades snapping), the gate's groaning hinges and clank, cloth rustling as you turn, thunder,
+and an ambience bed of wind gusts, rain, a low drone, crickets, and now and then an owl or the far
+cathedral bell. It starts when you push the gate open (that click is what lets the browser play
+audio). The **sound** toggle is in the HUD.
+
+Without WebGL, the site falls back to a plain page with the same sections (`src/pages/Plain.tsx`).
+In `npm run dev`, `window.engine` is the running engine, and `strike()` from `src/lib/storm.ts`
+calls down lightning (so does clicking the open sky).
 
 ### Performance budget
 
-- The night scene renders one shader pixel per 2–5 CSS pixels (about 250 rows), at 30 fps, and
-  stops while the tab is hidden. The garden is drawn once, and again only when the layout
-  moves a landmark (resize, fonts loading, a live widget changing size).
-- Inside the sideways track, `position: fixed` doesn't work (the track is transformed), so
-  overlays there are portalled to `document.body` (see the footer's stats panel).
-- Avoid `backdrop-filter`, big `filter: blur()` layers and infinite `background-position`
-  animations on large elements. Over an animated background they force full-screen repaints
-  every frame. The small shimmering `.text-glass` glyphs are fine.
-- Animate `transform` and `opacity` only, and only run a `requestAnimationFrame` loop while
-  something is actually moving (see `ScrambleText`, `useVisualizer`). Wrap infinite CSS
-  animations in an element using `usePauseOffscreen` so they stop while scrolled away.
+- The scene renders at roughly 430×260 pixels, so fill rate is tiny. Static geometry is merged
+  into one mesh per material at load (`mergeStatic` in `build.ts`), so the whole churchyard is
+  about 70 draw calls; hedges, grass tufts and railings are instanced; the mist is one mesh of
+  billboards. Keep it that way when adding things: put new static meshes in the scene and they
+  get merged; mark anything animated with `userData.dynamic`.
+- The render loop skips frames while the tab is hidden. three.js is loaded lazily, in its own
+  chunk, while the title screen shows.
+- Changing the number of lights recompiles every shader: the light pool is a fixed size (`POOL`).
+- Avoid `backdrop-filter` and big `filter: blur()` layers over the canvas; panels are solid.
 
 ## Live integrations
 
@@ -134,25 +142,26 @@ to the SPA so `/notes/...` links work.
 
 ## Secrets & details
 
-- The splash screen's doors open with a click, which unlocks audio (a church bell). UI sounds,
-  thunder and the organ swell on "ascend" are synthesized with WebAudio, and the **sound**
-  toggle is in the nav.
+- The gate opens with a click, which unlocks audio. "Back to the gate" at the calvary plays an
+  organ swell and wakes you up just inside the gate.
 - ↑ ↑ ↓ ↓ ← → ← → B A raises the blood moon, the only colour on the site.
 - The faint `?` in the footer opens "stats for nerds".
-- `prefers-reduced-motion` gets a still scene (no rain motion, no lightning flashes) and no
-  motion animations. Touch devices get no custom cursor.
-- `npm run og` re-renders the social preview (`public/og.png`) by screenshotting the hero. Run
+- `prefers-reduced-motion` gets no head bob, no mouse-look, no lightning flashes, quick walks
+  and no motion animations. Touch devices get no custom cursor.
+- `npm run og` re-renders the social preview (`public/og.png`) by screenshotting the gate. Run
   `npm run build && npm run preview` first (it expects the site on port 4173).
 
 ## Layout
 
 ```
 api/            Vercel functions (lastfm, github, preview, audio)
+src/world/      the 3D churchyard: engine, layout (stations), build, textures, voxels, sky, post,
+                and its React overlays (World, GateTitle, Reader)
 src/content/    all copy and data, typed, with no JSX
-src/sections/   page sections (Splash, Hero, Links, NowPlaying, Projects, About, Notes, Footer)
-src/components/ ExploreTrack, Nav, GlitchHandle, MiniPlayer, SectionHeading, PixelCross, Icon…
-src/scene/      the procedural pixel-art garden, cathedral and statue sprites
-src/fx/         effects: NightScene, Cursor, JewelCase, ScrambleText, ScanReveal, Resurface, TiltCard, Marquee…
+src/sections/   the content of each place (Links, NowPlaying, Projects, About, Notes, Footer)
+src/pages/      NotePage (a note over the world) and Plain (the no-WebGL fallback)
+src/components/ Nav (the HUD), GlitchHandle, MiniPlayer, PixelCross, Icon…
+src/fx/         effects: Cursor, JewelCase, ScrambleText, ScanReveal, Resurface, TiltCard…
 src/hooks/      useLanyard, useVisualizer, usePauseOffscreen, useRepoStats, useKonami, useFinePointer
-src/lib/        global stores (Last.fm feed, player), explore state, lightning bus, sfx, helpers
+src/lib/        global stores (Last.fm feed, player), lightning bus, sfx, helpers
 ```

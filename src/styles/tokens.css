@@ -2,9 +2,10 @@
  * Design tokens: the whole look of the site lives here.
  * Change these to reskin everything (colors, type, motion).
  *
- * V2, "vespers": a night garden around a cathedral, in a storm. Monochrome:
- * moonlit stone, bone and ink, drawn in big crisp pixels. The only colour
- * is the Konami code's blood moon.
+ * V3: a first-person walk through a churchyard at night, rendered small and
+ * pixelated like an old console game. The interface stays monochrome: bone
+ * text on ink, so it reads clearly over the world. The only colour is the
+ * Konami code's blood moon.
  */
 @theme {
   /* Surfaces: blue-black night */
@@ -14,10 +15,10 @@
   --color-line: rgb(236 236 240 / 0.1);
   --color-line-strong: rgb(236 236 240 / 0.2);
 
-  /* Text: bone and old parchment */
-  --color-fg: #e9e7e2;
-  --color-fg-muted: #9d9b97;
-  --color-fg-faint: #5d5c59;
+  /* Text: bone and old parchment (kept bright enough to read over the dark) */
+  --color-fg: #efece5;
+  --color-fg-muted: #bdb9b1;
+  --color-fg-faint: #8a8781;
 
   /* Moonlit stone, brightest to darkest (display text, bars, frames) */
   --color-stone-1: #f3f1ec;
@@ -32,10 +33,11 @@
   --color-glass-4: #55544f;
   --color-live: #f6f3ec;
 
-  /* Type: pixel blackletter for display, pixel sans for reading, tiny caps for labels */
-  --font-display: 'Jacquard 24', 'UnifrakturMaguntia', serif;
+  /* Type: a chunky pixel face for display, pixel sans for reading, and a
+     terminal face for labels and prompts (like a game's subtitles) */
+  --font-display: 'Jersey 10', ui-sans-serif, system-ui, sans-serif;
   --font-sans: 'Pixelify Sans Variable', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'Silkscreen', ui-monospace, monospace;
+  --font-mono: 'VT323', ui-monospace, monospace;
 
   /* Pixel art has no rounded corners (circles stay circles). */
   --radius-sm: 0;
@@ -86,8 +88,7 @@
     var(--color-glass-4),
     var(--color-glass-1)
   );
-  --panel-bg: rgb(10 10 12 / 0.86);
-  --section-pad: clamp(5rem, 12vw, 10rem);
+  --panel-bg: rgb(10 10 12 / 0.92);
 }
 
 /* Konami "blood moon" mode: the moon turns red and the glass bleeds. */

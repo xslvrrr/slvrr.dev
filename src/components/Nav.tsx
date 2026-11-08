@@ -1,10 +1,11 @@
-import { motion } from 'motion/react'
-import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router'
+import { AnimatePresence, motion } from 'motion/react'
+import { useEffect, useState } from 'react'
+import { Link, useLocation } from 'react-router'
 import { GlitchHandle } from '@/components/GlitchHandle'
-import { cameraX, explore } from '@/lib/explore'
 import { sfx } from '@/lib/sfx'
-import { soundStore, useStore } from '@/lib/store'
+import { enteredStore, soundStore, useStore } from '@/lib/store'
+import { worldStore } from '@/world/state'
+import { stations } from '@/world/stations'
 
 const sections = [
   { id: 'links', label: 'links' },
@@ -20,90 +21,77 @@ function useClock() {
     const id = window.setInterval(() => setNow(new Date()), 1000)
     return () => window.clearInterval(id)
   }, [])
-  return now.toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  })
+  return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
-/** While exploring: how far along the garden path you've walked. */
-function usePathProgress() {
-  const ref = useRef<HTMLSpanElement>(null)
-  useEffect(() => {
-    const update = () => {
-      if (!ref.current) return
-      const p = explore.maxX ? cameraX() / explore.maxX : 0
-      ref.current.style.transform = `scaleX(${Math.round(p * 40) / 40})`
-    }
-    update()
-    window.addEventListener('scroll', update, { passive: true })
-    window.addEventListener('explore:layout', update)
-    return () => {
-      window.removeEventListener('scroll', update)
-      window.removeEventListener('explore:layout', update)
-    }
-  }, [])
-  return ref
-}
-
+/**
+ * The HUD: name, a map of where you can go (each link walks you there), the
+ * time, and the sound toggle. Hidden on the title screen.
+ */
 export function Nav() {
   const time = useClock()
   const sound = useStore(soundStore)
-  const path = usePathProgress()
+  const entered = useStore(enteredStore)
+  const { mode, station } = useStore(worldStore)
+  const { hash } = useLocation()
+  const show =
+    mode === 'failed' ||
+    (entered && mode !== 'loading' && mode !== 'gate' && mode !== 'opening')
+  const here = stations[station]?.section
 
   return (
-    <motion.header
-      className="fixed inset-x-0 top-0 z-50 flex items-center justify-between gap-4 px-4 py-4 font-mono text-[10px] text-fg-muted mix-blend-difference md:px-8"
-      initial={{ y: -40, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ delay: 0.4, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-    >
-      <Link
-        to="/"
-        className="font-display text-2xl leading-none text-fg"
-        onMouseEnter={sfx.tick}
-      >
-        <GlitchHandle />
-      </Link>
-      <nav className="relative hidden gap-6 md:flex">
-        <span
-          aria-hidden
-          className="absolute inset-x-0 -bottom-2 hidden h-0.5 bg-fg/20 explore:block"
-        />
-        <span
-          ref={path}
-          aria-hidden
-          className="absolute inset-x-0 -bottom-2 hidden h-0.5 origin-left scale-x-0 bg-fg explore:block"
-        />
-        {sections.map((s) => (
-          <Link
-            key={s.id}
-            to={`/#${s.id}`}
-            onMouseEnter={sfx.tick}
-            className="uppercase tracking-widest transition-colors hover:text-fg"
-          >
-            {s.label}
-          </Link>
-        ))}
-      </nav>
-      <div className="flex items-center gap-4">
-        <span className="tabular-nums" title="my local time">
-          {time}
-        </span>
-        <button
-          type="button"
-          onClick={() => {
-            soundStore.set(!sound)
-            if (!sound) sfx.click()
-          }}
-          className="uppercase tracking-widest hover:text-fg"
-          aria-pressed={sound}
-          data-cursor={sound ? 'mute' : 'unmute'}
+    <AnimatePresence>
+      {show && (
+        <motion.header
+          className="fixed inset-x-0 top-0 z-50 flex items-center justify-between gap-4 bg-gradient-to-b from-black/70 to-transparent px-4 pb-6 pt-3 font-mono text-lg text-fg-muted md:px-8"
+          initial={{ y: -40, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ delay: 0.4, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         >
-          sound {sound ? 'on' : 'off'}
-        </button>
-      </div>
-    </motion.header>
+          <Link
+            to="/"
+            className="font-display text-3xl leading-none text-fg [text-shadow:2px_2px_0_#000]"
+            onMouseEnter={sfx.tick}
+            aria-label="slvrr, home"
+          >
+            <GlitchHandle />
+          </Link>
+          <nav className="hidden gap-5 md:flex" aria-label="Places">
+            {sections.map((s) => {
+              const current = hash === `#${s.id}` || (!hash && here === s.id)
+              return (
+                <Link
+                  key={s.id}
+                  to={`/#${s.id}`}
+                  onMouseEnter={sfx.tick}
+                  aria-current={current ? 'location' : undefined}
+                  className={`uppercase tracking-widest transition-colors [text-shadow:2px_2px_0_#000] hover:text-fg ${current ? 'text-fg' : ''}`}
+                >
+                  {current ? `▸ ${s.label}` : s.label}
+                </Link>
+              )
+            })}
+          </nav>
+          <div className="flex items-center gap-4 [text-shadow:2px_2px_0_#000]">
+            <span className="tabular-nums" title="my local time">
+              {time}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                soundStore.set(!sound)
+                if (!sound) sfx.click()
+              }}
+              className="uppercase tracking-widest hover:text-fg"
+              aria-pressed={sound}
+              data-cursor={sound ? 'mute' : 'unmute'}
+            >
+              sound {sound ? 'on' : 'off'}
+            </button>
+          </div>
+        </motion.header>
+      )}
+    </AnimatePresence>
   )
 }

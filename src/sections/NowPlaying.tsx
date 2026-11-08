@@ -1,8 +1,5 @@
 import { motion } from 'motion/react'
 import { useRef, useState } from 'react'
-import { Landmark } from '@/components/ExploreTrack'
-import { SectionHeading } from '@/components/SectionHeading'
-import { copy } from '@/content/copy'
 import { media } from '@/content/media'
 import { profile } from '@/content/profile'
 import type { MediaItem } from '@/content/types'
@@ -27,73 +24,69 @@ export function NowPlaying() {
 
   return (
     // A fountain: music, like water, never stops for long.
-    <section id="music" data-bg="music" data-landmark="fountain" className="section">
-      <SectionHeading {...copy.sections.music} />
-      <div className="grid gap-8 lg:grid-cols-[1fr_1.2fr] explore:flex explore:items-start explore:gap-0">
-        <div
-          ref={panel}
-          className="panel flex flex-col items-center gap-8 p-8 sm:flex-row lg:flex-col xl:flex-row explore:w-[34vw] explore:flex-row explore:gap-6 explore:p-6"
-        >
-          <Vinyl art={np?.art ?? null} spinning={live || listening} />
-          <div className="flex min-w-0 flex-1 flex-col gap-3 self-stretch">
-            <p className="eyebrow flex items-center gap-2">
-              {live ? (
-                <>
-                  <span className="h-2 w-2 animate-pulse bg-live" /> now playing
-                </>
-              ) : np ? (
-                `last played ${timeAgo(np.playedAt)}`
-              ) : (
-                'now playing'
-              )}
-            </p>
-            {np ? (
-              <a
-                href={np.url}
-                target="_blank"
-                rel="noreferrer"
-                className="group"
-                data-cursor="open"
-              >
-                <p className="font-display text-4xl leading-none group-hover:text-glass-3 md:text-5xl">
-                  {np.track}
-                </p>
-                <p className="text-fg-muted">{np.artist}</p>
-                {np.album && <p className="text-sm text-fg-faint">{np.album}</p>}
-              </a>
+    <div className="flex flex-col gap-8">
+      <div
+        ref={panel}
+        className="flex flex-col items-center gap-6 border-2 border-line bg-black/30 p-5 sm:flex-row"
+      >
+        <Vinyl art={np?.art ?? null} spinning={live || listening} />
+        <div className="flex min-w-0 flex-1 flex-col gap-3 self-stretch">
+          <p className="eyebrow flex items-center gap-2">
+            {live ? (
+              <>
+                <span className="h-2 w-2 animate-pulse bg-live" /> now playing
+              </>
+            ) : np ? (
+              `last played ${timeAgo(np.playedAt)}`
             ) : (
-              <div>
-                <p className="font-display text-4xl leading-none md:text-5xl">
-                  silence, for now
-                </p>
-                <p className="text-sm text-fg-faint">
-                  {profile.lastfmUser
-                    ? 'waiting on last.fm…'
-                    : 'set lastfmUser in src/content/profile.ts to go live'}
-                </p>
-              </div>
+              'now playing'
             )}
-            <ListenAlong disabled={!np} />
-            <Bars live={live} listening={listening} />
-          </div>
-        </div>
-
-        <Landmark className="w-[28vw]" />
-        <div className="grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-3 explore:w-[min(36vw,58vh)] explore:gap-y-5">
-          {media.map((m, i) => (
-            <motion.div
-              key={m.title + i}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.06, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          </p>
+          {np ? (
+            <a
+              href={np.url}
+              target="_blank"
+              rel="noreferrer"
+              className="group"
+              data-cursor="open"
             >
-              <Cover item={m} />
-            </motion.div>
-          ))}
+              <p className="font-display text-4xl leading-none group-hover:text-glass-3 md:text-5xl">
+                {np.track}
+              </p>
+              <p className="text-fg-muted">{np.artist}</p>
+              {np.album && <p className="text-sm text-fg-muted">{np.album}</p>}
+            </a>
+          ) : (
+            <div>
+              <p className="font-display text-4xl leading-none md:text-5xl">
+                silence, for now
+              </p>
+              <p className="text-sm text-fg-muted">
+                {profile.lastfmUser
+                  ? 'waiting on last.fm…'
+                  : 'set lastfmUser in src/content/profile.ts to go live'}
+              </p>
+            </div>
+          )}
+          <ListenAlong disabled={!np} />
+          <Bars live={live} listening={listening} />
         </div>
       </div>
-    </section>
+
+      <div className="grid grid-cols-2 gap-x-5 gap-y-6 sm:grid-cols-3">
+        {media.map((m, i) => (
+          <motion.div
+            key={m.title + i}
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: i * 0.06, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <Cover item={m} />
+          </motion.div>
+        ))}
+      </div>
+    </div>
   )
 }
 
@@ -101,7 +94,7 @@ export function NowPlaying() {
 function ListenAlong({ disabled }: { disabled: boolean }) {
   const { status } = useStore(playerStore)
   const base =
-    'pixel-btn inline-flex items-center gap-2 px-4 py-2 font-mono text-[10px] uppercase tracking-widest'
+    'pixel-btn inline-flex items-center gap-2 px-4 py-2 font-mono text-lg uppercase tracking-widest'
 
   if (status === 'idle') {
     return (
@@ -121,7 +114,7 @@ function ListenAlong({ disabled }: { disabled: boolean }) {
           </svg>
           listen along
         </button>
-        <span className="font-mono text-[10px] uppercase tracking-widest text-fg-faint">
+        <span className="font-mono text-base uppercase tracking-widest text-fg-muted">
           30s previews · follows my songs
         </span>
       </div>
@@ -156,7 +149,7 @@ function ListenAlong({ disabled }: { disabled: boolean }) {
 
 function Vinyl({ art, spinning }: { art: string | null; spinning: boolean }) {
   return (
-    <div className="relative aspect-square w-48 shrink-0 md:w-56 explore:w-[min(11vw,22vh)]">
+    <div className="relative aspect-square w-40 shrink-0 md:w-44">
       {/* CSS spin (transform only) that pauses in place instead of snapping back */}
       <div
         className="absolute inset-0 animate-[spin_3.2s_linear_infinite] rounded-full shadow-[0_20px_60px_-10px_rgb(0_0_0/0.9)]"
@@ -254,9 +247,9 @@ function Cover({ item }: { item: MediaItem }) {
     <>
       <JewelCase>{art}</JewelCase>
       <div className="mt-4 min-w-0">
-        <p className="eyebrow !text-[9px]">{item.kind}</p>
+        <p className="eyebrow">{item.kind}</p>
         <p className="truncate text-sm font-semibold text-fg">{item.title}</p>
-        <p className="truncate text-xs text-fg-muted">{item.by}</p>
+        <p className="truncate text-sm text-fg-muted">{item.by}</p>
       </div>
     </>
   )

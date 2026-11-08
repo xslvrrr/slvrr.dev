@@ -7,8 +7,8 @@
   },
   "overrides": [
     {
-      // react-three-fiber mutates three.js objects imperatively by design.
-      "files": ["src/three/**"],
+      // The 3D world mutates three.js objects imperatively by design.
+      "files": ["src/world/**"],
       "rules": { "react/immutability": "off" }
     }
   ]

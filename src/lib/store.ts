@@ -22,7 +22,7 @@ export type Mode = 'night' | 'bloodmoon'
 
 export const modeStore = createStore<Mode>('night')
 export const soundStore = createStore<boolean>(readSound())
-/** Whether the splash gate has been passed (remembered for the browser session). */
+/** Whether the churchyard gate has been opened (remembered for the browser session). */
 export const enteredStore = createStore<boolean>(readEntered())
 
 modeStore.subscribe(() => {
@@ -45,8 +45,6 @@ soundStore.subscribe(() => {
 
 function readEntered() {
   try {
-    // `?og` skips the splash, for rendering the social preview (npm run og).
-    if (new URLSearchParams(location.search).has('og')) return true
     return sessionStorage.getItem('slvrr:entered') === '1'
   } catch {
     return false

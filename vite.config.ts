@@ -46,7 +46,7 @@ export default defineConfig({
     devApi(),
   ],
   build: {
-    // The lazily loaded Three.js scene chunk is ~1 MB by design.
+    // The lazily loaded three.js world (src/world/engine.ts) is ~630 kB by design.
     chunkSizeWarningLimit: 1200,
   },
   resolve: {

@@ -7,9 +7,6 @@ import {
 } from 'motion/react'
 import { useRef } from 'react'
 import { Icon } from '@/components/Icon'
-import { copy } from '@/content/copy'
-import { Landmark } from '@/components/ExploreTrack'
-import { SectionHeading } from '@/components/SectionHeading'
 import { links } from '@/content/links'
 import { profile } from '@/content/profile'
 import type { SocialLink } from '@/content/types'
@@ -26,53 +23,48 @@ export function Links() {
   const mouseX = useMotionValue(Infinity)
 
   return (
-    // A herald angel: this is where my voice carries from.
-    <section id="links" data-bg="links" data-landmark="herald" className="section">
-      <SectionHeading {...copy.sections.links} />
-      <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-8 lg:grid-cols-[1.4fr_1fr] explore:flex explore:gap-0">
-        <div className="flex min-w-0 flex-col gap-6 explore:w-[40vw]">
-          {/* macOS-style magnifying dock */}
-          <nav
-            aria-label="Social links"
-            className="panel flex h-28 items-end justify-center gap-2 overflow-x-auto px-4 pb-4 md:gap-3"
-            onPointerMove={(e) => e.pointerType === 'mouse' && mouseX.set(e.clientX)}
-            onPointerLeave={() => mouseX.set(Infinity)}
-          >
-            {links.map((l) => (
-              <DockItem key={l.label} link={l} mouseX={mouseX} />
-            ))}
-          </nav>
-          <ul className="grid gap-2 sm:grid-cols-2">
-            {links.map((l) => (
-              <li key={l.label}>
-                <a
-                  href={l.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  onMouseEnter={sfx.tick}
-                  className="group flex items-center justify-between border-2 border-line bg-ink/70 px-4 py-3 transition-colors hover:border-glass-1/50 hover:text-glass-3"
-                >
-                  <span className="flex items-center gap-3">
-                    <Icon
-                      name={l.icon}
-                      className="h-4 w-4 text-fg-muted group-hover:text-fg"
-                    />
-                    <ScrambleText text={l.label} trigger="hover" />
-                  </span>
-                  <span className="font-mono text-xs text-fg-faint transition-transform group-hover:translate-x-1 group-hover:text-glass-1">
-                    →
-                  </span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <Landmark className="w-[30vw]" />
-        <div className="explore:w-[26vw]">
-          <DiscordCard />
-        </div>
+    // The signpost: every arrow points somewhere I am.
+    <div className="flex flex-col gap-6">
+      <div className="flex min-w-0 flex-col gap-6">
+        {/* macOS-style magnifying dock */}
+        <nav
+          aria-label="Social links"
+          data-scrolls
+          className="flex h-28 items-end justify-center-safe gap-2 overflow-x-auto border-2 border-line bg-black/30 px-4 pb-4 md:gap-3"
+          onPointerMove={(e) => e.pointerType === 'mouse' && mouseX.set(e.clientX)}
+          onPointerLeave={() => mouseX.set(Infinity)}
+        >
+          {links.map((l) => (
+            <DockItem key={l.label} link={l} mouseX={mouseX} />
+          ))}
+        </nav>
+        <ul className="grid gap-2 sm:grid-cols-2">
+          {links.map((l) => (
+            <li key={l.label}>
+              <a
+                href={l.href}
+                target="_blank"
+                rel="noreferrer"
+                onMouseEnter={sfx.tick}
+                className="group flex items-center justify-between border-2 border-line bg-ink/70 px-4 py-3 transition-colors hover:border-glass-1/50 hover:text-glass-3"
+              >
+                <span className="flex items-center gap-3">
+                  <Icon
+                    name={l.icon}
+                    className="h-4 w-4 text-fg-muted group-hover:text-fg"
+                  />
+                  <ScrambleText text={l.label} trigger="hover" />
+                </span>
+                <span className="font-mono text-base text-fg-faint transition-transform group-hover:translate-x-1 group-hover:text-glass-1">
+                  →
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
       </div>
-    </section>
+      <DiscordCard />
+    </div>
   )
 }
 
@@ -124,10 +116,10 @@ function DiscordCard() {
   const img = activity ? activityImage(activity) : null
 
   return (
-    <div className="panel flex flex-col gap-5 p-6">
+    <div className="flex flex-col gap-5 border-2 border-line bg-black/30 p-5">
       <div className="flex items-center justify-between">
         <p className="eyebrow">discord</p>
-        <span className="flex items-center gap-2 font-mono text-xs text-fg-muted">
+        <span className="flex items-center gap-2 font-mono text-base text-fg-muted">
           <span className="relative grid h-2 w-2 place-items-center">
             {/* radar ping while online (transform + opacity only) */}
             {p && p.discord_status !== 'offline' && (
@@ -172,10 +164,10 @@ function DiscordCard() {
           <div className="h-16 w-16 border-2 border-line-strong bg-gradient-to-br from-stone-3 from-50% to-stone-4 to-50%" />
         )}
         <div className="min-w-0">
-          <p className="truncate font-display text-3xl leading-tight">
+          <p className="truncate font-display text-4xl leading-tight">
             {p?.discord_user.global_name ?? p?.discord_user.username ?? profile.name}
           </p>
-          <p className="truncate font-mono text-xs text-fg-muted">
+          <p className="truncate font-mono text-base text-fg-muted">
             {custom ?? (p ? `@${p.discord_user.username}` : profile.handle)}
           </p>
         </div>
@@ -203,7 +195,7 @@ function DiscordCard() {
             sub={activity.details ?? activity.state}
           />
         ) : (
-          <p className="font-mono text-xs text-fg-faint">
+          <p className="font-mono text-base text-fg-muted">
             {state === 'off'
               ? 'set discordId in src/content/profile.ts to show live presence'
               : state === 'unmonitored' && import.meta.env.DEV
@@ -235,7 +227,7 @@ function Activity({
         <div className="h-14 w-14 bg-ink-3" />
       )}
       <div className="min-w-0">
-        <p className="eyebrow !text-[10px]">{label}</p>
+        <p className="eyebrow">{label}</p>
         <p className="truncate font-semibold">{title}</p>
         {sub && <p className="truncate text-sm text-fg-muted">{sub}</p>}
       </div>
